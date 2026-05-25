@@ -13,6 +13,7 @@
 - Render free web services use an ephemeral filesystem.
 - Uploaded avatars and OCR source files are not durable on the free plan.
 - The extracted OCR text is stored in Postgres and will persist.
+- Sessions and cache use the local filesystem on Render, so they reset on restart.
 - Render free Postgres expires after 30 days unless upgraded.
 
 ## Deploy
@@ -39,6 +40,8 @@ The Render Blueprint sets the production variables directly. The app uses:
 
 - `DB_CONNECTION=pgsql`
 - `DB_URL` from the managed Postgres database
+- `SESSION_DRIVER=file`
+- `CACHE_STORE=file`
 - `QUEUE_CONNECTION=sync` so no worker is required on the free plan
 - `MAIL_MAILER=log` for local-style email logging in production
 

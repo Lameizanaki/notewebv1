@@ -1,6 +1,7 @@
 .git
 .github
 .vscode
+.npm-cache
 node_modules
 vendor
 storage/logs
