@@ -1,0 +1,15 @@
+.git
+.github
+.vscode
+node_modules
+vendor
+storage/logs
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/public/*
+.env
+.env.*
+npm-debug.log
+.phpunit.result.cache
+tests
