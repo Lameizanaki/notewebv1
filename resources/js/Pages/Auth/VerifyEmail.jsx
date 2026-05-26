@@ -1,9 +1,10 @@
+import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function VerifyEmail({ status }) {
-    const { post, processing } = useForm({});
+    const { post, processing, errors } = useForm({});
 
     const submit = (e) => {
         e.preventDefault();
@@ -30,6 +31,8 @@ export default function VerifyEmail({ status }) {
             )}
 
             <form onSubmit={submit}>
+                <InputError message={errors.email} className="mb-4" />
+
                 <div className="mt-4 flex items-center justify-between">
                     <PrimaryButton disabled={processing}>
                         Resend Verification Email
