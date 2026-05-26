@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -33,12 +34,16 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'nullable|string|max:255|alpha_dash|unique:'.User::class.',username',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
             'name' => $request->name,
+            'username' => $request->filled('username')
+                ? Str::lower($request->string('username')->toString())
+                : $this->makeUniqueUsername($request->name ?: Str::before($request->email, '@')),
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
@@ -48,5 +53,24 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         return redirect(route('dashboard', absolute: false));
+    }
+
+    private function makeUniqueUsername(string $seed): string
+    {
+        $base = Str::lower(Str::slug($seed, '_'));
+
+        if ($base === '') {
+            $base = 'user';
+        }
+
+        $username = $base;
+        $suffix = 1;
+
+        while (User::where('username', $username)->exists()) {
+            $username = "{$base}_{$suffix}";
+            $suffix++;
+        }
+
+        return $username;
     }
 }
