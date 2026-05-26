@@ -412,7 +412,6 @@ function ToolbarButton({ active = false, label, onTrigger, title, wide = false }
 
 function PlateToolbar({
     isDictating = false,
-    onAutoFormat,
     onFormatChange,
     onOpenOcr,
     onRequestDictation,
@@ -582,16 +581,6 @@ function PlateToolbar({
                 }`}
             >
                 {isDictating ? 'Stop Dictation' : 'Dictation'}
-            </button>
-            <button
-                type="button"
-                onMouseDown={(event) => {
-                    event.preventDefault();
-                    onAutoFormat?.();
-                }}
-                className="rounded-2xl border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
-            >
-                Auto Format
             </button>
         </div>
     );
@@ -1011,7 +1000,6 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                     <PlateToolbar
                         onOpenOcr={onOpenOcr}
                         onRequestDictation={toggleDictation}
-                        onAutoFormat={applyAutoFormat}
                         onFormatChange={onContentChange}
                         isDictating={isDictating}
                     />
