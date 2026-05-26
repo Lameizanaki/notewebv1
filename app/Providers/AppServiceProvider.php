@@ -7,6 +7,7 @@ use App\Services\AutoCorrect\LanguageToolAutoCorrectService;
 use App\Services\AutoCorrect\LocalAutoCorrectService;
 use App\Services\Ocr\OcrService;
 use App\Services\Ocr\TesseractOcrService;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+            URL::forceRootUrl(config('app.url'));
+        }
+
         Vite::prefetch(concurrency: 3);
     }
 }
