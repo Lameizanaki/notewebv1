@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Throwable;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -48,9 +49,15 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
-
         Auth::login($user);
+
+        try {
+            event(new Registered($user));
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return redirect(route('dashboard', absolute: false))->with('status', 'verification-email-failed');
+        }
 
         return redirect(route('dashboard', absolute: false));
     }
