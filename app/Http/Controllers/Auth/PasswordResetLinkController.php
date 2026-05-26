@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class PasswordResetLinkController extends Controller
 {
@@ -43,6 +44,14 @@ class PasswordResetLinkController extends Controller
             );
         } catch (Throwable $exception) {
             report($exception);
+            Log::error('Password reset email failed.', [
+                'email' => $request->email,
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'scheme' => config('mail.mailers.smtp.scheme'),
+                'exception' => $exception->getMessage(),
+            ]);
 
             throw ValidationException::withMessages([
                 'email' => ['We could not send the password reset email right now. Please try again later.'],

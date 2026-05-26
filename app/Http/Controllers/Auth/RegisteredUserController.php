@@ -9,12 +9,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Throwable;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class RegisteredUserController extends Controller
 {
@@ -55,6 +56,14 @@ class RegisteredUserController extends Controller
             event(new Registered($user));
         } catch (Throwable $exception) {
             report($exception);
+            Log::error('Verification email failed during registration.', [
+                'email' => $user->email,
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'scheme' => config('mail.mailers.smtp.scheme'),
+                'exception' => $exception->getMessage(),
+            ]);
 
             return redirect(route('dashboard', absolute: false))->with('status', 'verification-email-failed');
         }
