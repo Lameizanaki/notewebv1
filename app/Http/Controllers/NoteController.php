@@ -85,15 +85,21 @@ class NoteController extends Controller
         $note->tags()->sync($validated['tag_ids'] ?? []);
 
         return redirect()
-            ->route('notes.edit', $note)
+            ->route('notes.show', $note)
             ->with('success', 'Note created successfully.');
     }
 
-    public function show(Request $request, Note $note): RedirectResponse
+    public function show(Request $request, Note $note): Response
     {
         $note = $this->ownedNote($request, $note->id);
 
-        return redirect()->route('notes.edit', $note);
+        return Inertia::render('Notes/Show', [
+            'note' => $this->transformSingleNote($note),
+            'tags' => $this->transformTags($request->user()->tags()->orderBy('name')->get()),
+            'ocrUploads' => $this->transformUploads(
+                $request->user()->ocrUploads()->latest()->limit(1)->get()
+            ),
+        ]);
     }
 
     public function edit(Request $request, Note $note): Response

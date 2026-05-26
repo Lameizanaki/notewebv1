@@ -1,4 +1,4 @@
-import { normalizeEditorHtml } from '@/lib/noteContent';
+import { normalizeEditorHtml, sanitizeEditorHtml } from '@/lib/noteContent';
 import {
     BasicBlocksPlugin,
     BasicMarksPlugin,
@@ -14,7 +14,6 @@ import {
     useEditorSelector,
     usePlateEditor,
 } from 'platejs/react';
-import { serializeHtml } from 'platejs/static';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 const plugins = [BasicBlocksPlugin, BasicMarksPlugin, ListClassicPlugin];
@@ -25,8 +24,241 @@ const editorShellClassName =
 const editableClassName =
     'min-h-[26rem] rounded-[1.5rem] px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_li]:pl-1 [&_li]:text-slate-100 [&_ul_ol]:mt-2 [&_ul_ul]:mt-2';
 
+const emptyValue = [{ type: 'p', children: [{ text: '' }] }];
+
+function getSafeAlign(align) {
+    return ['left', 'center', 'right'].includes(align) ? align : 'left';
+}
+
+function getAlignClass(align) {
+    const safeAlign = getSafeAlign(align);
+
+    return {
+        center: 'text-center',
+        right: 'text-right',
+        left: 'text-left',
+    }[safeAlign];
+}
+
+function getAlignStyle(align) {
+    return { textAlign: getSafeAlign(align) };
+}
+
+function getDomTextAlign(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+        return 'left';
+    }
+
+    return getSafeAlign(element.style?.textAlign);
+}
+
+function escapeHtml(value = '') {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function ensureTextChildren(children) {
+    return children.length ? children : [{ text: '' }];
+}
+
+function deserializeInlineNode(node, marks = {}) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return [{ text: node.textContent ?? '', ...marks }];
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        return [];
+    }
+
+    const tagName = node.tagName.toUpperCase();
+    const nextMarks = { ...marks };
+
+    if (tagName === 'BR') {
+        return [{ text: '\n', ...marks }];
+    }
+
+    if (tagName === 'STRONG' || tagName === 'B') {
+        nextMarks.bold = true;
+    }
+
+    if (tagName === 'EM' || tagName === 'I') {
+        nextMarks.italic = true;
+    }
+
+    if (tagName === 'U') {
+        nextMarks.underline = true;
+    }
+
+    if (tagName === 'S' || tagName === 'STRIKE') {
+        nextMarks.strikethrough = true;
+    }
+
+    if (tagName === 'CODE') {
+        nextMarks.code = true;
+    }
+
+    return [...node.childNodes].flatMap((child) => deserializeInlineNode(child, nextMarks));
+}
+
+function deserializeListItem(node) {
+    const children = [];
+    let inlineChildren = [];
+
+    [...node.childNodes].forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && ['UL', 'OL'].includes(child.tagName.toUpperCase())) {
+            if (inlineChildren.length) {
+                children.push({ type: 'lic', children: ensureTextChildren(inlineChildren) });
+                inlineChildren = [];
+            }
+
+            children.push(deserializeBlockNode(child));
+            return;
+        }
+
+        inlineChildren.push(...deserializeInlineNode(child));
+    });
+
+    if (inlineChildren.length || !children.length) {
+        children.unshift({ type: 'lic', children: ensureTextChildren(inlineChildren) });
+    }
+
+    return {
+        type: 'li',
+        align: getDomTextAlign(node),
+        children,
+    };
+}
+
+function deserializeBlockNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent?.trim();
+        return text ? { type: 'p', children: [{ text }] } : null;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        return null;
+    }
+
+    const tagName = node.tagName.toUpperCase();
+    const align = getDomTextAlign(node);
+
+    if (tagName === 'UL' || tagName === 'OL') {
+        return {
+            type: tagName.toLowerCase(),
+            children: [...node.children]
+                .filter((child) => child.tagName?.toUpperCase() === 'LI')
+                .map((child) => deserializeListItem(child)),
+        };
+    }
+
+    if (tagName === 'LI') {
+        return deserializeListItem(node);
+    }
+
+    const typeMap = {
+        BLOCKQUOTE: 'blockquote',
+        H1: 'h1',
+        H2: 'h2',
+        H3: 'h3',
+        P: 'p',
+    };
+
+    return {
+        type: typeMap[tagName] ?? 'p',
+        align,
+        children: ensureTextChildren(deserializeInlineNode(node)),
+    };
+}
+
+function deserializeHtmlToValue(html = '') {
+    if (typeof document === 'undefined') {
+        return emptyValue;
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = normalizeEditorHtml(html) || '<p></p>';
+
+    const value = [...template.content.childNodes]
+        .map((node) => deserializeBlockNode(node))
+        .filter(Boolean);
+
+    return value.length ? value : emptyValue;
+}
+
+function serializeTextNode(node) {
+    let html = escapeHtml(node.text ?? '').replace(/\n/g, '<br>');
+
+    if (node.code) {
+        html = `<code>${html}</code>`;
+    }
+
+    if (node.bold) {
+        html = `<strong>${html}</strong>`;
+    }
+
+    if (node.italic) {
+        html = `<em>${html}</em>`;
+    }
+
+    if (node.underline) {
+        html = `<u>${html}</u>`;
+    }
+
+    if (node.strikethrough) {
+        html = `<s>${html}</s>`;
+    }
+
+    return html;
+}
+
+function serializeChildren(children = []) {
+    return children.map((child) => serializeNode(child)).join('');
+}
+
+function alignAttribute(node) {
+    const align = getSafeAlign(node.align);
+
+    return align === 'left' ? '' : ` style="text-align: ${align};"`;
+}
+
+function serializeNode(node) {
+    if ('text' in node) {
+        return serializeTextNode(node);
+    }
+
+    const children = serializeChildren(node.children);
+
+    switch (node.type) {
+        case 'h1':
+            return `<h1${alignAttribute(node)}>${children || '<br>'}</h1>`;
+        case 'h2':
+            return `<h2${alignAttribute(node)}>${children || '<br>'}</h2>`;
+        case 'h3':
+            return `<h3${alignAttribute(node)}>${children || '<br>'}</h3>`;
+        case 'blockquote':
+            return `<blockquote${alignAttribute(node)}>${children || '<br>'}</blockquote>`;
+        case 'ul':
+            return `<ul>${children}</ul>`;
+        case 'ol':
+            return `<ol>${children}</ol>`;
+        case 'li':
+            return `<li${alignAttribute(node)}>${children}</li>`;
+        case 'lic':
+            return children;
+        case 'p':
+        default:
+            return `<p${alignAttribute(node)}>${children || '<br>'}</p>`;
+    }
+}
+
 function renderElement(props) {
     const { element } = props;
+    const alignClass = getAlignClass(element.align);
+    const alignStyle = getAlignStyle(element.align);
 
     switch (element.type) {
         case 'h1':
@@ -34,7 +266,8 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="h1"
-                    className="mt-7 text-4xl font-semibold tracking-[-0.03em] text-white first:mt-0"
+                    style={alignStyle}
+                    className={`mt-7 text-4xl font-semibold tracking-[-0.03em] text-white first:mt-0 ${alignClass}`}
                 />
             );
         case 'h2':
@@ -42,7 +275,8 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="h2"
-                    className="mt-7 text-3xl font-semibold tracking-[-0.02em] text-white first:mt-0"
+                    style={alignStyle}
+                    className={`mt-7 text-3xl font-semibold tracking-[-0.02em] text-white first:mt-0 ${alignClass}`}
                 />
             );
         case 'h3':
@@ -50,7 +284,8 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="h3"
-                    className="mt-6 text-xl font-semibold tracking-[-0.02em] text-white first:mt-0"
+                    style={alignStyle}
+                    className={`mt-6 text-xl font-semibold tracking-[-0.02em] text-white first:mt-0 ${alignClass}`}
                 />
             );
         case 'blockquote':
@@ -58,7 +293,8 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="blockquote"
-                    className="my-5 border-l-4 border-emerald-300/60 pl-5 text-[15px] italic leading-8 text-slate-300"
+                    style={alignStyle}
+                    className={`my-5 border-l-4 border-emerald-300/60 pl-5 text-[15px] italic leading-8 text-slate-300 ${alignClass}`}
                 />
             );
         case 'ul':
@@ -78,9 +314,9 @@ function renderElement(props) {
                 />
             );
         case 'li':
-            return <PlateElement {...props} as="li" className="pl-1 text-slate-100" />;
+            return <PlateElement {...props} as="li" style={alignStyle} className={`pl-1 text-slate-100 ${alignClass}`} />;
         case 'lic':
-            return <PlateElement {...props} as="div" className="min-w-0" />;
+            return <PlateElement {...props} as="div" style={alignStyle} className={`min-w-0 ${alignClass}`} />;
         case 'taskList':
             return (
                 <PlateElement
@@ -95,7 +331,8 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="p"
-                    className="my-4 text-[15px] leading-8 text-slate-100 first:mt-0 last:mb-0"
+                    style={alignStyle}
+                    className={`my-4 text-[15px] leading-8 text-slate-100 first:mt-0 last:mb-0 ${alignClass}`}
                 />
             );
     }
@@ -159,9 +396,8 @@ function ToolbarButton({ active = false, label, onTrigger, title, wide = false }
 }
 
 function PlateToolbar({
-    autoCorrectDisabled = false,
     isDictating = false,
-    onAutoCorrect,
+    onAutoFormat,
     onOpenOcr,
     onRequestDictation,
 }) {
@@ -192,11 +428,15 @@ function PlateToolbar({
 
         return listEntry?.[0]?.type ?? null;
     }, [selection]);
+    const currentBlockAlign = useEditorSelector((currentEditor) => {
+        const blockEntry = getCurrentBlockEntry(currentEditor);
+
+        return getSafeAlign(blockEntry?.[0]?.align);
+    }, [selection]);
 
     const paragraphType = editor.getType(KEYS.p);
     const headingType = editor.getType('h2');
     const subheadingType = editor.getType('h3');
-    const quoteType = editor.getType(KEYS.blockquote);
     const bulletedListType = editor.getType('ul');
     const numberedListType = editor.getType('ol');
     const runToggle = (key) => {
@@ -207,6 +447,16 @@ function PlateToolbar({
     };
     const resetToParagraph = () => {
         editor.tf.resetBlock();
+        editor.tf.focus();
+    };
+    const setAlignment = (align) => {
+        const blockEntry = getCurrentBlockEntry(editor);
+
+        if (!blockEntry) {
+            return;
+        }
+
+        editor.tf.setNodes({ align: getSafeAlign(align) }, { at: blockEntry[1] });
         editor.tf.focus();
     };
 
@@ -252,19 +502,35 @@ function PlateToolbar({
                 onTrigger={() => runToggle('h3')}
             />
             <ToolbarButton
-                active={currentBlockType === quoteType}
-                label="Quote"
-                title="Quote"
-                wide
-                onTrigger={() => runToggle(KEYS.blockquote)}
-            />
-            <ToolbarButton
                 active={currentBlockType === paragraphType}
                 label="Text"
                 title="Paragraph"
                 wide
                 onTrigger={resetToParagraph}
             />
+            <div className="mx-1 hidden h-10 w-px bg-slate-800 lg:block" />
+            <ToolbarButton
+                active={currentBlockAlign === 'left'}
+                label="Left"
+                title="Align left"
+                wide
+                onTrigger={() => setAlignment('left')}
+            />
+            <ToolbarButton
+                active={currentBlockAlign === 'center'}
+                label="Center"
+                title="Align center"
+                wide
+                onTrigger={() => setAlignment('center')}
+            />
+            <ToolbarButton
+                active={currentBlockAlign === 'right'}
+                label="Right"
+                title="Align right"
+                wide
+                onTrigger={() => setAlignment('right')}
+            />
+            <div className="mx-1 hidden h-10 w-px bg-slate-800 lg:block" />
             <ToolbarButton
                 active={activeListType === bulletedListType}
                 label="Bullets"
@@ -302,21 +568,20 @@ function PlateToolbar({
             </button>
             <button
                 type="button"
-                onClick={onAutoCorrect}
-                disabled={autoCorrectDisabled}
-                className="rounded-2xl border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                onMouseDown={(event) => {
+                    event.preventDefault();
+                    onAutoFormat?.();
+                }}
+                className="rounded-2xl border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
             >
-                {autoCorrectDisabled ? 'Correcting...' : 'Auto Correct'}
+                Auto Format
             </button>
         </div>
     );
 }
 
 async function serializeEditor(editor) {
-    return serializeHtml(editor, {
-        stripClassNames: true,
-        stripDataAttributes: true,
-    });
+    return sanitizeEditorHtml(serializeChildren(editor.children));
 }
 
 function cloneSelection(selection) {
@@ -336,34 +601,11 @@ function cloneSelection(selection) {
     };
 }
 
-function isExpandedSelection(selection) {
-    if (!selection) {
-        return false;
-    }
-
-    return (
-        selection.anchor.offset !== selection.focus.offset ||
-        selection.anchor.path.length !== selection.focus.path.length ||
-        selection.anchor.path.some((segment, index) => segment !== selection.focus.path[index])
-    );
-}
-
-function getCurrentBlockRange(editor) {
-    const blockEntry = editor.api.above({
+function getCurrentBlockEntry(editor) {
+    return editor.api.above({
         at: editor.selection ?? undefined,
         match: (node) => typeof node === 'object' && node !== null && editor.api.isBlock(node),
     });
-
-    if (!blockEntry) {
-        return null;
-    }
-
-    const [, path] = blockEntry;
-
-    return {
-        anchor: editor.api.start(path),
-        focus: editor.api.end(path),
-    };
 }
 
 function getSpeechRecognitionConstructor() {
@@ -378,10 +620,9 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     { value, readOnly = false, onOpenOcr, onContentChange, placeholder = 'Write your note here...' },
     ref,
 ) {
-    const normalizedValue = useMemo(() => normalizeEditorHtml(value ?? '') || '<p></p>', [value]);
-    const [autoCorrectStatus, setAutoCorrectStatus] = useState('');
-    const [autoCorrectError, setAutoCorrectError] = useState('');
-    const [isAutoCorrecting, setIsAutoCorrecting] = useState(false);
+    const editorValue = useMemo(() => deserializeHtmlToValue(value ?? ''), [value]);
+    const [formatStatus, setFormatStatus] = useState('');
+    const [formatError, setFormatError] = useState('');
     const [dictationStatus, setDictationStatus] = useState('');
     const [dictationError, setDictationError] = useState('');
     const [isDictating, setIsDictating] = useState(false);
@@ -391,9 +632,9 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     const editor = usePlateEditor(
         {
             plugins,
-            value: normalizedValue,
+            value: editorValue,
         },
-        [normalizedValue],
+        [editorValue],
     );
 
     useEffect(() => {
@@ -401,38 +642,13 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             return;
         }
 
-        editor.tf.setValue(normalizedValue);
-    }, [editor, normalizedValue]);
+        editor.tf.setValue(editorValue);
+    }, [editor, editorValue]);
 
     useEffect(() => () => {
         recognitionRef.current?.stop?.();
         recognitionRef.current = null;
     }, []);
-
-    const requestAutoCorrect = async (text) => {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const response = await fetch(route('autocorrect.store'), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({
-                text,
-            }),
-        });
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(payload.message || 'Auto Correct failed. Please try again.');
-        }
-
-        return payload;
-    };
 
     const insertDictationText = (rawText) => {
         const text = rawText.trim();
@@ -545,6 +761,90 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
         startDictation();
     };
 
+    const applyAutoFormat = () => {
+        if (!editor) {
+            return;
+        }
+
+        setFormatError('');
+        setFormatStatus('');
+
+        try {
+            const blockEntry = getCurrentBlockEntry(editor);
+
+            if (!blockEntry) {
+                setFormatStatus('Place the cursor in a paragraph to auto format it.');
+                return;
+            }
+
+            const [, path] = blockEntry;
+            const blockRange = {
+                anchor: editor.api.start(path),
+                focus: editor.api.end(path),
+            };
+            const blockText = editor.api.string(blockRange);
+            const trimmed = blockText.trim();
+
+            if (!trimmed) {
+                setFormatStatus('Nothing to auto format yet.');
+                return;
+            }
+
+            const rules = [
+                {
+                    pattern: /^##\s+(.+)$/,
+                    apply: (text) => {
+                        editor.tf.select(blockRange);
+                        editor.tf.insertText(text);
+                        editor.tf.setNodes({ type: editor.getType('h3') }, { at: path });
+                        setFormatStatus('Applied subheading formatting.');
+                    },
+                },
+                {
+                    pattern: /^#\s+(.+)$/,
+                    apply: (text) => {
+                        editor.tf.select(blockRange);
+                        editor.tf.insertText(text);
+                        editor.tf.setNodes({ type: editor.getType('h2') }, { at: path });
+                        setFormatStatus('Applied heading formatting.');
+                    },
+                },
+                {
+                    pattern: /^[-*]\s+(.+)$/,
+                    apply: (text) => {
+                        editor.tf.select(blockRange);
+                        editor.tf.insertText(text);
+                        editor.getPlugin({ key: 'ul' })?.transforms?.ul?.toggle?.();
+                        setFormatStatus('Applied bullet list formatting.');
+                    },
+                },
+                {
+                    pattern: /^\d+[.)]\s+(.+)$/,
+                    apply: (text) => {
+                        editor.tf.select(blockRange);
+                        editor.tf.insertText(text);
+                        editor.getPlugin({ key: 'ol' })?.transforms?.ol?.toggle?.();
+                        setFormatStatus('Applied numbered list formatting.');
+                    },
+                },
+            ];
+
+            const matchedRule = rules.find((rule) => rule.pattern.test(trimmed));
+
+            if (!matchedRule) {
+                setFormatStatus('Start a paragraph with #, ##, -, *, or 1. then click Auto Format.');
+                return;
+            }
+
+            const [, formattedText] = trimmed.match(matchedRule.pattern);
+            matchedRule.apply(formattedText.trim());
+            editor.tf.focus();
+            onContentChange?.();
+        } catch (_error) {
+            setFormatError('Auto formatting failed. Please try again.');
+        }
+    };
+
     useImperativeHandle(
         ref,
         () => ({
@@ -563,84 +863,10 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                 const currentHtml = await serializeEditor(editor);
                 const nextHtml = `${currentHtml}${normalizeEditorHtml(text)}`;
 
-                editor.tf.setValue(nextHtml || '<p></p>');
+                editor.tf.setValue(deserializeHtmlToValue(nextHtml));
                 editor.tf.focus();
             },
-            async autoCorrect() {
-                if (!editor) {
-                    return;
-                }
-
-                setAutoCorrectError('');
-                setAutoCorrectStatus('');
-                setIsAutoCorrecting(true);
-
-                try {
-                    const selection = cloneSelection(editor.selection);
-
-                    if (isExpandedSelection(selection)) {
-                        const selectedText = editor.api.string(selection);
-                        const payload = await requestAutoCorrect(selectedText);
-
-                        if (payload.text !== selectedText) {
-                            editor.tf.select(selection);
-                            editor.tf.insertText(payload.text);
-                            setAutoCorrectStatus(
-                                payload.fallback_used
-                                    ? 'LanguageTool was unavailable. Local cleanup corrected the selected text.'
-                                    : 'Corrected selected text.',
-                            );
-                        } else {
-                            setAutoCorrectStatus(
-                                payload.fallback_used
-                                    ? 'LanguageTool was unavailable. Local cleanup did not change the selected text.'
-                                    : 'Selected text did not need changes.',
-                            );
-                        }
-
-                        editor.tf.focus();
-                        return;
-                    }
-
-                    const blockRange = getCurrentBlockRange(editor);
-
-                    if (!blockRange) {
-                        setAutoCorrectStatus('Nothing to correct here yet.');
-                        return;
-                    }
-
-                    const blockText = editor.api.string(blockRange);
-
-                    if (!blockText.trim()) {
-                        setAutoCorrectStatus('Nothing to correct here yet.');
-                        return;
-                    }
-
-                    const payload = await requestAutoCorrect(blockText);
-
-                    if (payload.text !== blockText) {
-                        editor.tf.select(blockRange);
-                        editor.tf.insertText(payload.text);
-                        setAutoCorrectStatus(
-                            payload.fallback_used
-                                ? 'LanguageTool was unavailable. Local cleanup corrected the current paragraph.'
-                                : 'Corrected the current paragraph.',
-                        );
-                    } else {
-                        setAutoCorrectStatus(
-                            payload.fallback_used
-                                ? 'LanguageTool was unavailable. Local cleanup did not change the current paragraph.'
-                                : 'Current paragraph did not need changes.',
-                        );
-                    }
-
-                    editor.tf.focus();
-                } catch (error) {
-                    setAutoCorrectError(error.message || 'Auto Correct failed. Please try again.');
-                } finally {
-                    setIsAutoCorrecting(false);
-                }
-            },
+            autoFormat: applyAutoFormat,
             toggleDictation,
             stopDictation,
         }),
@@ -686,8 +912,7 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                     <PlateToolbar
                         onOpenOcr={onOpenOcr}
                         onRequestDictation={toggleDictation}
-                        onAutoCorrect={() => ref?.current?.autoCorrect?.()}
-                        autoCorrectDisabled={isAutoCorrecting}
+                        onAutoFormat={applyAutoFormat}
                         isDictating={isDictating}
                     />
                 ) : null}
@@ -701,14 +926,14 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                         {dictationStatus}
                     </p>
                 ) : null}
-                {autoCorrectError ? (
+                {formatError ? (
                     <p className="mb-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                        {autoCorrectError}
+                        {formatError}
                     </p>
                 ) : null}
-                {!autoCorrectError && autoCorrectStatus ? (
+                {!formatError && formatStatus ? (
                     <p className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
-                        {autoCorrectStatus}
+                        {formatStatus}
                     </p>
                 ) : null}
                 <PlateContent

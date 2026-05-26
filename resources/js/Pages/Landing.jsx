@@ -45,7 +45,7 @@ export default function Landing({ canLogin, canRegister }) {
                                     'Laravel + React + Inertia',
                                     'Breeze auth and email verification',
                                     'Pinned, tagged, searchable notes',
-                                    'OCR, dictation, and auto-correct placeholders',
+                                    'OCR, dictation, and auto-formatting placeholders',
                                 ].map((item) => (
                                     <div key={item} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300">
                                         {item}
@@ -59,7 +59,7 @@ export default function Landing({ canLogin, canRegister }) {
                             <ul className="mt-5 space-y-4 text-sm leading-7 text-slate-300">
                                 <li>Notes can be created, edited, pinned, filtered by tag, searched by title, and sorted by date.</li>
                                 <li>Deleted notes move to trash, can be restored, and are marked for purge after 30 days.</li>
-                                <li>OCR uploads, dictation, and auto-correction hooks are ready for future feature work.</li>
+                                <li>OCR uploads, dictation, and auto-formatting hooks are ready for future feature work.</li>
                             </ul>
 
                             <Link

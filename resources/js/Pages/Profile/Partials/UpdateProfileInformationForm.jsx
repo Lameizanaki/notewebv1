@@ -14,7 +14,7 @@ export default function UpdateProfileInformationForm({
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: user.name ?? '',
-        email: user.email ?? '',
+        username: user.username ?? '',
         avatar: null,
     });
 
@@ -32,7 +32,7 @@ export default function UpdateProfileInformationForm({
             <header>
                 <h2 className="text-lg font-medium text-white">Profile Information</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                    Update your display name, avatar, and email address.
+                    Update your display name and avatar. Email changes are disabled for this project.
                 </p>
             </header>
 
@@ -74,17 +74,31 @@ export default function UpdateProfileInformationForm({
                 </div>
 
                 <div>
+                    <InputLabel htmlFor="username" value="Username" />
+                    <TextInput
+                        id="username"
+                        className="mt-2 block w-full"
+                        value={data.username}
+                        onChange={(e) => setData('username', e.target.value)}
+                        required
+                        autoComplete="username"
+                    />
+                    <InputError className="mt-2" message={errors.username} />
+                </div>
+
+                <div>
                     <InputLabel htmlFor="email" value="Email" />
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-2 block w-full"
-                        value={data.email}
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
+                        className="mt-2 block w-full cursor-not-allowed opacity-70"
+                        value={user.email ?? ''}
+                        disabled
                         autoComplete="email"
                     />
-                    <InputError className="mt-2" message={errors.email} />
+                    <p className="mt-2 text-xs text-slate-500">
+                        Email cannot be changed from settings.
+                    </p>
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
@@ -97,7 +111,7 @@ export default function UpdateProfileInformationForm({
                                 as="button"
                                 className="ml-2 underline transition hover:text-white"
                             >
-                                Click here to re-send the verification email.
+                                Send verification link.
                             </Link>
                         </p>
 

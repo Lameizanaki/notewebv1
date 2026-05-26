@@ -42,11 +42,6 @@ class ProfileController extends Controller
         }
 
         $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
         $user->save();
 
         return Redirect::route('settings.edit')->with('success', 'Profile updated successfully.');

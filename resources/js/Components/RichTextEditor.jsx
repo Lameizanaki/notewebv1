@@ -1,4 +1,4 @@
-import { autoCorrectHtml, normalizeEditorHtml, plainTextToHtml, sanitizeEditorHtml } from '@/lib/noteContent';
+import { normalizeEditorHtml, plainTextToHtml, sanitizeEditorHtml } from '@/lib/noteContent';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 const defaultState = {
@@ -27,7 +27,9 @@ const commandMap = {
     paragraph: () => document.execCommand('formatBlock', false, 'p'),
     heading: () => document.execCommand('formatBlock', false, 'h2'),
     subheading: () => document.execCommand('formatBlock', false, 'h3'),
-    quote: () => document.execCommand('formatBlock', false, 'blockquote'),
+    alignLeft: () => document.execCommand('justifyLeft'),
+    alignCenter: () => document.execCommand('justifyCenter'),
+    alignRight: () => document.execCommand('justifyRight'),
 };
 
 const richTextStyles =
@@ -117,15 +119,32 @@ const RichTextEditor = forwardRef(function RichTextEditor(
             syncContent();
             updateToolbarState();
         },
-        autoCorrect() {
+        autoFormat() {
             if (readOnly || !editorRef.current) {
                 return;
             }
 
-            const corrected = autoCorrectHtml(editorRef.current.innerHTML);
-            editorRef.current.innerHTML = corrected || '<p></p>';
-            latestValueRef.current = corrected;
-            onChange(corrected);
+            const text = editorRef.current.textContent?.trim() ?? '';
+            const match = text.match(/^(##|#|[-*]|\d+[.)])\s+(.+)$/);
+
+            if (!match) {
+                return;
+            }
+
+            const [, marker, content] = match;
+            editorRef.current.textContent = content;
+
+            if (marker === '#') {
+                document.execCommand('formatBlock', false, 'h2');
+            } else if (marker === '##') {
+                document.execCommand('formatBlock', false, 'h3');
+            } else if (/^[-*]$/.test(marker)) {
+                document.execCommand('insertUnorderedList');
+            } else {
+                document.execCommand('insertOrderedList');
+            }
+
+            syncContent();
             updateToolbarState();
         },
     }));

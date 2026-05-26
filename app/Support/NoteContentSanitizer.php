@@ -39,6 +39,17 @@ class NoteContentSanitizer
         'div' => 'p',
     ];
 
+    private const ALIGNABLE_TAGS = [
+        'blockquote',
+        'div',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'li',
+        'p',
+    ];
+
     public static function sanitize(?string $content): ?string
     {
         $content = trim((string) $content);
@@ -107,10 +118,17 @@ class NoteContentSanitizer
             return;
         }
 
+        $textAlign = in_array($tagName, self::ALIGNABLE_TAGS, true)
+            ? self::safeTextAlign($element->getAttribute('style'))
+            : null;
         $target = $mappedTag === $tagName ? $element : self::renameElement($element, $mappedTag);
 
         while ($target->attributes->length > 0) {
             $target->removeAttributeNode($target->attributes->item(0));
+        }
+
+        if ($textAlign !== null) {
+            $target->setAttribute('style', 'text-align: '.$textAlign.';');
         }
 
         self::sanitizeChildren($target);
@@ -118,6 +136,15 @@ class NoteContentSanitizer
         if ($target->tagName !== 'br' && trim($target->textContent) === '' && ! $target->hasChildNodes()) {
             $target->parentNode?->removeChild($target);
         }
+    }
+
+    private static function safeTextAlign(string $style): ?string
+    {
+        if (preg_match('/(?:^|;)\s*text-align\s*:\s*(left|center|right)\s*(?:;|$)/i', $style, $matches) !== 1) {
+            return null;
+        }
+
+        return strtolower($matches[1]);
     }
 
     private static function renameElement(DOMElement $element, string $newTag): DOMElement

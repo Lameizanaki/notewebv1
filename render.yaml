@@ -39,16 +39,6 @@ services:
         value: 300
       - key: OCR_TIMEOUT
         value: 120
-      - key: AUTOCORRECT_DRIVER
-        value: languagetool
-      - key: AUTOCORRECT_LANGUAGE
-        value: en-US
-      - key: AUTOCORRECT_FALLBACK_TO_LOCAL
-        value: true
-      - key: LANGUAGETOOL_BASE_URL
-        value: https://api.languagetool.org/v2
-      - key: LANGUAGETOOL_TIMEOUT
-        value: 10
 
 databases:
   - name: quicknote-db

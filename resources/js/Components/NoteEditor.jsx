@@ -7,42 +7,6 @@ import TagSelector from '@/Components/TagSelector';
 import { Link, router } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
-function AutoSaveBadge({ status }) {
-    if (!status) return null;
-
-    const map = {
-        saving: {
-            text: 'Saving…',
-            className:
-                'border-slate-700 bg-slate-800/60 text-slate-400',
-        },
-        saved: {
-            text: '✓ Saved',
-            className:
-                'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-        },
-        error: {
-            text: '✕ Auto-save failed',
-            className:
-                'border-rose-500/40 bg-rose-500/10 text-rose-300',
-        },
-    };
-
-    const cfg = map[status];
-    if (!cfg) return null;
-
-    return (
-        <span
-            className={`inline-flex items-center rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-300 ${cfg.className}`}
-        >
-            {status === 'saving' ? (
-                <span className="mr-1.5 inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-slate-500 border-t-slate-300" />
-            ) : null}
-            {cfg.text}
-        </span>
-    );
-}
-
 export default function NoteEditor({
     form,
     submit,
@@ -114,11 +78,6 @@ export default function NoteEditor({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                            {/* Auto-save status badge */}
-                            {!readOnly && mode === 'edit' ? (
-                                <AutoSaveBadge status={autoSaveStatus} />
-                            ) : null}
-
                             {readOnly && note ? (
                                 <Link
                                     href={route('notes.edit', note.id)}

@@ -1,4 +1,5 @@
 const blockTags = new Set(['P', 'H2', 'H3', 'UL', 'OL', 'LI', 'BLOCKQUOTE']);
+const alignableTags = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'LI', 'BLOCKQUOTE', 'DIV']);
 
 function escapeHtml(value) {
     return value
@@ -38,6 +39,12 @@ function unwrap(node) {
     }
 
     parent.removeChild(node);
+}
+
+function safeTextAlign(value = '') {
+    const align = value.toLowerCase();
+
+    return ['left', 'center', 'right'].includes(align) ? align : '';
 }
 
 export function sanitizeEditorHtml(value = '') {
@@ -93,6 +100,7 @@ export function sanitizeEditorHtml(value = '') {
             }
 
             let element = child;
+            const textAlign = alignableTags.has(tagName) ? safeTextAlign(element.style?.textAlign) : '';
 
             if (mapped !== tagName) {
                 const replacement = document.createElement(mapped.toLowerCase());
@@ -106,6 +114,9 @@ export function sanitizeEditorHtml(value = '') {
             }
 
             [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
+            if (textAlign) {
+                element.setAttribute('style', `text-align: ${textAlign};`);
+            }
             sanitizeNode(element);
         });
     };
@@ -142,28 +153,4 @@ export function normalizeEditorHtml(value = '') {
     }
 
     return looksLikeHtml(value) ? sanitizeEditorHtml(value) : plainTextToHtml(value);
-}
-
-export function autoCorrectPlainText(value = '') {
-    return value
-        .replace(/[ \t]{2,}/g, ' ')
-        .replace(/\bi\b/g, 'I')
-        .replace(/([.!?])\s*([a-z])/g, (_, punctuation, letter) => `${punctuation} ${letter.toUpperCase()}`);
-}
-
-export function autoCorrectHtml(value = '') {
-    const template = document.createElement('template');
-    template.innerHTML = sanitizeEditorHtml(value);
-    const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
-
-    while (walker.nextNode()) {
-        textNodes.push(walker.currentNode);
-    }
-
-    textNodes.forEach((node) => {
-        node.textContent = autoCorrectPlainText(node.textContent);
-    });
-
-    return sanitizeEditorHtml(template.innerHTML);
 }
