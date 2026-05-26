@@ -34,16 +34,30 @@ The startup script:
 - runs `php artisan migrate --force`
 - starts Laravel on the Render-assigned port
 
+## Email
+
+Render free services can time out on outbound SMTP ports, so use an HTTPS mail
+provider such as Resend for verification and password reset emails.
+
+Set these variables in the Render service environment:
+
+- `MAIL_MAILER=resend`
+- `RESEND_API_KEY=your_resend_api_key`
+- `MAIL_FROM_ADDRESS=onboarding@resend.dev` for testing, or an address from your verified domain
+- `MAIL_FROM_NAME=QuickNote`
+
+For real sender addresses, verify a sending domain in Resend and use an address
+from that domain.
+
 ## Environment
 
-The Render Blueprint sets the production variables directly. The app uses:
+The Render Blueprint sets the production infrastructure variables directly. The app uses:
 
 - `DB_CONNECTION=pgsql`
 - `DB_URL` from the managed Postgres database
 - `SESSION_DRIVER=file`
 - `CACHE_STORE=file`
 - `QUEUE_CONNECTION=sync` so no worker is required on the free plan
-- `MAIL_MAILER=log` for local-style email logging in production
 
 ## After deploy
 
