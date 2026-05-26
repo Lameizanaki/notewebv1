@@ -31,7 +31,7 @@ COPY vite.config.js tailwind.config.js postcss.config.js jsconfig.json ./
 RUN npm run build
 
 
-FROM php:8.3-cli-bookworm
+FROM php:8.4-cli-bookworm
 
 WORKDIR /var/www/html
 
