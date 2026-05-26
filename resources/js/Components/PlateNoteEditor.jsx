@@ -10,13 +10,28 @@ import {
     PlateContent,
     PlateElement,
     PlateLeaf,
+    createPlatePlugin,
     useEditorRef,
     useEditorSelector,
     usePlateEditor,
 } from 'platejs/react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-const plugins = [BasicBlocksPlugin, BasicMarksPlugin, ListClassicPlugin];
+const AlignmentPlugin = createPlatePlugin({
+    key: 'align',
+    inject: {
+        isBlock: true,
+        nodeProps: {
+            defaultNodeValue: 'left',
+            nodeKey: 'align',
+            styleKey: 'textAlign',
+            validNodeValues: ['left', 'center', 'right'],
+        },
+        targetPlugins: [KEYS.p, 'h1', 'h2', 'h3', KEYS.blockquote, 'li', 'lic'],
+    },
+});
+
+const plugins = [BasicBlocksPlugin, BasicMarksPlugin, ListClassicPlugin, AlignmentPlugin];
 
 const editorShellClassName =
     'min-h-[34rem] rounded-[2rem] border border-slate-800/90 bg-slate-950/70 p-4 shadow-[0_28px_80px_rgba(2,6,23,0.45)]';
@@ -398,6 +413,7 @@ function ToolbarButton({ active = false, label, onTrigger, title, wide = false }
 function PlateToolbar({
     isDictating = false,
     onAutoFormat,
+    onFormatChange,
     onOpenOcr,
     onRequestDictation,
 }) {
@@ -429,7 +445,7 @@ function PlateToolbar({
         return listEntry?.[0]?.type ?? null;
     }, [selection]);
     const currentBlockAlign = useEditorSelector((currentEditor) => {
-        const blockEntry = getCurrentBlockEntry(currentEditor);
+        const blockEntry = getAlignTargetEntry(currentEditor);
 
         return getSafeAlign(blockEntry?.[0]?.align);
     }, [selection]);
@@ -450,13 +466,14 @@ function PlateToolbar({
         editor.tf.focus();
     };
     const setAlignment = (align) => {
-        const blockEntry = getCurrentBlockEntry(editor);
+        const blockEntry = getAlignTargetEntry(editor);
 
         if (!blockEntry) {
             return;
         }
 
         editor.tf.setNodes({ align: getSafeAlign(align) }, { at: blockEntry[1] });
+        onFormatChange?.();
         editor.tf.focus();
     };
 
@@ -601,11 +618,37 @@ function cloneSelection(selection) {
     };
 }
 
+function isCollapsedSelection(selection) {
+    return (
+        selection &&
+        selection.anchor.offset === selection.focus.offset &&
+        selection.anchor.path.length === selection.focus.path.length &&
+        selection.anchor.path.every((segment, index) => segment === selection.focus.path[index])
+    );
+}
+
 function getCurrentBlockEntry(editor) {
     return editor.api.above({
         at: editor.selection ?? undefined,
         match: (node) => typeof node === 'object' && node !== null && editor.api.isBlock(node),
     });
+}
+
+function getAlignTargetEntry(editor) {
+    const blockEntry = getCurrentBlockEntry(editor);
+
+    if (!blockEntry) {
+        return null;
+    }
+
+    if (blockEntry[0]?.type !== 'lic') {
+        return blockEntry;
+    }
+
+    return editor.api.above({
+        at: editor.selection ?? undefined,
+        match: (node) => typeof node === 'object' && node !== null && node.type === 'li',
+    }) ?? blockEntry;
 }
 
 function getSpeechRecognitionConstructor() {
@@ -845,6 +888,58 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
         }
     };
 
+    const applyAutoFormatMarker = (marker, range, path) => {
+        editor.tf.select(range);
+        editor.tf.delete();
+
+        if (marker === '#') {
+            editor.tf.setNodes({ type: editor.getType('h2') }, { at: path });
+            setFormatStatus('Heading started.');
+        } else if (marker === '##') {
+            editor.tf.setNodes({ type: editor.getType('h3') }, { at: path });
+            setFormatStatus('Subheading started.');
+        } else if (marker === '-' || marker === '*') {
+            editor.getPlugin({ key: 'ul' })?.transforms?.ul?.toggle?.();
+            setFormatStatus('Bullet list started.');
+        } else {
+            editor.getPlugin({ key: 'ol' })?.transforms?.ol?.toggle?.();
+            setFormatStatus('Numbered list started.');
+        }
+
+        editor.tf.focus();
+        onContentChange?.();
+    };
+
+    const handleAutoFormatSpace = (event) => {
+        if (readOnly || event.key !== ' ' || !isCollapsedSelection(editor.selection)) {
+            return false;
+        }
+
+        const blockEntry = getCurrentBlockEntry(editor);
+
+        if (!blockEntry) {
+            return false;
+        }
+
+        const [, path] = blockEntry;
+        const range = {
+            anchor: editor.api.start(path),
+            focus: editor.selection.anchor,
+        };
+        const marker = editor.api.string(range).trim();
+
+        if (!['#', '##', '-', '*', '1.', '1)'].includes(marker)) {
+            return false;
+        }
+
+        event.preventDefault();
+        setFormatError('');
+        setFormatStatus('');
+        applyAutoFormatMarker(marker, range, path);
+
+        return true;
+    };
+
     useImperativeHandle(
         ref,
         () => ({
@@ -878,6 +973,10 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     }
 
     const handleEditorKeyDown = (event) => {
+        if (handleAutoFormatSpace(event)) {
+            return;
+        }
+
         if (event.key !== 'Tab' || readOnly) {
             return;
         }
@@ -913,6 +1012,7 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                         onOpenOcr={onOpenOcr}
                         onRequestDictation={toggleDictation}
                         onAutoFormat={applyAutoFormat}
+                        onFormatChange={onContentChange}
                         isDictating={isDictating}
                     />
                 ) : null}
