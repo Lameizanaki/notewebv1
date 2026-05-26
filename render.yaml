@@ -27,6 +27,8 @@ services:
         value: sync
       - key: FILESYSTEM_DISK
         value: public
+      - key: MAIL_TIMEOUT
+        value: 10
       - key: OCR_TESSERACT_PATH
         value: tesseract
       - key: OCR_GHOSTSCRIPT_PATH
