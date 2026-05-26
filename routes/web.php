@@ -16,7 +16,7 @@ Route::get('/', function () {
     ]);
 })->name('landing');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [NoteController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
