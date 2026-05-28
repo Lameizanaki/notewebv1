@@ -1,7 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
-if [ -n "${RENDER_EXTERNAL_HOSTNAME:-}" ]; then
+if [ -n "${APP_URL:-}" ]; then
+  export APP_URL="$(printf '%s' "$APP_URL" | sed 's#^http://#https://#')"
+elif [ -n "${RENDER_EXTERNAL_HOSTNAME:-}" ]; then
   export APP_URL="https://$RENDER_EXTERNAL_HOSTNAME"
 elif [ -n "${RENDER_EXTERNAL_URL:-}" ]; then
   export APP_URL="$(printf '%s' "$RENDER_EXTERNAL_URL" | sed 's#^http://#https://#')"
