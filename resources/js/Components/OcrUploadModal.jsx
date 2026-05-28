@@ -1,11 +1,12 @@
 import { useForm } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function OcrUploadModal({ open, onClose, noteId = null, uploads = [], onInsertText }) {
     const form = useForm({
         note_id: noteId ?? '',
         file: null,
     });
+    const [uploadError, setUploadError] = useState('');
     const latestUpload = uploads[0] ?? null;
 
     useEffect(() => {
@@ -64,7 +65,10 @@ export default function OcrUploadModal({ open, onClose, noteId = null, uploads =
                         form.post(route('ocr-uploads.store'), {
                             preserveScroll: true,
                             forceFormData: true,
+                            onStart: () => setUploadError(''),
                             onSuccess: () => form.reset('file'),
+                            onError: () => setUploadError('OCR upload failed. Please try a smaller PNG or JPG.'),
+                            onFinish: () => form.clearErrors(),
                         });
                     }}
                     className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
@@ -77,6 +81,7 @@ export default function OcrUploadModal({ open, onClose, noteId = null, uploads =
                         className="mt-3 block w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
                     />
                     {form.errors.file ? <p className="mt-2 text-sm text-rose-300">{form.errors.file}</p> : null}
+                    {uploadError ? <p className="mt-2 text-sm text-rose-300">{uploadError}</p> : null}
 
                     <div className="mt-4 flex justify-end">
                         <button

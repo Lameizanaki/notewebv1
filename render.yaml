@@ -31,6 +31,8 @@ services:
         value: public
       - key: MAIL_TIMEOUT
         value: 10
+      - key: OCR_DRIVER
+        value: mock
       - key: OCR_TESSERACT_PATH
         value: tesseract
       - key: OCR_GHOSTSCRIPT_PATH

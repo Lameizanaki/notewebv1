@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Ocr\MockOcrService;
 use App\Services\Ocr\OcrService;
 use App\Services\Ocr\TesseractOcrService;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -18,7 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(OcrService::class, TesseractOcrService::class);
+        $this->app->bind(OcrService::class, function ($app) {
+            return config('ocr.driver') === 'mock'
+                ? $app->make(MockOcrService::class)
+                : $app->make(TesseractOcrService::class);
+        });
     }
 
     /**
