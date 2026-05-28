@@ -38,9 +38,9 @@ services:
       - key: OCR_LANGUAGE
         value: eng
       - key: OCR_PDF_DPI
-        value: 300
+        value: 150
       - key: OCR_TIMEOUT
-        value: 120
+        value: 45
 
 databases:
   - name: quicknote-db

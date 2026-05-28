@@ -25,6 +25,10 @@ exit(in_array(strlen($key), [16, 32], true) ? 0 : 1);
   export APP_KEY="$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')"
 fi
 
+if [ -e public/storage ] && [ ! -L public/storage ]; then
+  rm -rf public/storage
+fi
+
 php artisan storage:link || true
 php artisan config:clear
 php artisan route:clear
