@@ -79,7 +79,7 @@ export default function Sidebar({ user, className = '', onClose = null, showMobi
                     )}
                     <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-white">{user?.name}</p>
-                        <p className="truncate text-xs text-slate-400">@{user?.username}</p>
+                        <p className="truncate text-xs text-slate-400">{user?.email}</p>
                     </div>
                 </div>
 

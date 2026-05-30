@@ -49,6 +49,12 @@ services:
         value: gemini-2.5-flash
       - key: GEMINI_TIMEOUT
         value: 20
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://quicknoteapp.site/auth/google/callback
 
 databases:
   - name: quicknote-db

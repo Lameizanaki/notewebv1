@@ -14,7 +14,6 @@ export default function UpdateProfileInformationForm({
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: user.name ?? '',
-        username: user.username ?? '',
         avatar: null,
     });
 
@@ -71,19 +70,6 @@ export default function UpdateProfileInformationForm({
                         autoComplete="name"
                     />
                     <InputError className="mt-2" message={errors.name} />
-                </div>
-
-                <div>
-                    <InputLabel htmlFor="username" value="Username" />
-                    <TextInput
-                        id="username"
-                        className="mt-2 block w-full"
-                        value={data.username}
-                        onChange={(e) => setData('username', e.target.value)}
-                        required
-                        autoComplete="username"
-                    />
-                    <InputError className="mt-2" message={errors.username} />
                 </div>
 
                 <div>
