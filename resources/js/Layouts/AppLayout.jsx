@@ -135,7 +135,7 @@ export default function AppLayout({ title, actions, children }) {
                                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-950/70 text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 aria-label={sidebarOpen || mobileSidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
                             >
-                                <Icon name={sidebarOpen || mobileSidebarOpen ? 'x' : 'menu'} className="h-4 w-4" />
+                                <Icon name="menu" className="h-4 w-4" />
                             </button>
 
                             <div>

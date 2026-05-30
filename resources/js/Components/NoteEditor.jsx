@@ -78,11 +78,11 @@ export default function NoteEditor({
                             {form.errors.title ? <p className="mt-2 text-sm text-rose-300">{form.errors.title}</p> : null}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex w-full flex-wrap items-center gap-2 lg:w-32 lg:flex-col lg:items-stretch lg:pt-7">
                             {readOnly && note ? (
                                 <Link
                                     href={route('notes.edit', note.id)}
-                                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
                                     <Icon name="fileText" className="h-4 w-4" />
                                     Edit Note
@@ -95,7 +95,7 @@ export default function NoteEditor({
                                         form.setData('is_pinned', !form.data.is_pinned);
                                         onContentChange?.();
                                     }}
-                                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
                                     <Icon name="pin" className="h-4 w-4" />
                                     {form.data.is_pinned ? 'Unpin' : 'Pin'}
@@ -105,7 +105,7 @@ export default function NoteEditor({
                                 <button
                                     type="button"
                                     onClick={() => setShowDeleteDialog(true)}
-                                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-500/40 px-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-rose-500/40 px-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
                                 >
                                     <Icon name="trash" className="h-4 w-4" />
                                     Delete
@@ -115,7 +115,7 @@ export default function NoteEditor({
                                 <button
                                     type="submit"
                                     disabled={form.processing}
-                                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     <Icon name="save" className="h-4 w-4" />
                                     Save Note
