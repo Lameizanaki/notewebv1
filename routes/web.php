@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AutoCorrectController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\OcrController;
 use App\Http\Controllers\ProfileController;
@@ -40,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
     Route::post('/ocr-uploads', [OcrController::class, 'store'])->name('ocr-uploads.store');
+    Route::post('/auto-correct', AutoCorrectController::class)->name('auto-correct.check');
 
     Route::get('/settings', [ProfileController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [ProfileController::class, 'update'])->name('settings.update');

@@ -108,6 +108,15 @@ const icons = {
             <path d="m20 20-3.5-3.5" />
         </>
     ),
+    sparkles: (
+        <>
+            <path d="M12 3 13.6 8.4 19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" />
+            <path d="M19 16v4" />
+            <path d="M17 18h4" />
+            <path d="M4 4v3" />
+            <path d="M2.5 5.5h3" />
+        </>
+    ),
     strikethrough: (
         <>
             <path d="M16 4H9a3 3 0 0 0-1.8 5.4L15.6 15A3 3 0 0 1 13.8 20H6" />

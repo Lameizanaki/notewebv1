@@ -415,9 +415,11 @@ function ToolbarButton({ active = false, children, icon, label, onTrigger, title
 
 function PlateToolbar({
     isDictating = false,
+    autoCorrectProcessing = false,
     onFormatChange,
     onOpenOcr,
     onRequestDictation,
+    onRequestAutoCorrect,
 }) {
     const editor = useEditorRef();
     const marks = useEditorSelector((currentEditor) => currentEditor.api.marks?.() ?? {}, []);
@@ -588,6 +590,18 @@ function PlateToolbar({
                 <Icon name="mic" className="h-4 w-4" />
                 {isDictating ? 'Stop' : 'Dictate'}
             </button>
+            <button
+                type="button"
+                disabled={autoCorrectProcessing}
+                onMouseDown={(event) => {
+                    event.preventDefault();
+                    onRequestAutoCorrect?.();
+                }}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-700 px-2.5 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                <Icon name="sparkles" className="h-4 w-4" />
+                {autoCorrectProcessing ? 'Checking...' : 'Auto Correct'}
+            </button>
         </div>
     );
 }
@@ -654,6 +668,78 @@ function getSpeechRecognitionConstructor() {
     return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
+const SAFE_AUTO_CORRECT_CATEGORIES = new Set(['TYPOS', 'GRAMMAR', 'CASING', 'PUNCTUATION', 'CONFUSED_WORDS']);
+const SAFE_AUTO_CORRECT_ISSUE_TYPES = new Set(['misspelling', 'grammar', 'typographical']);
+
+function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+}
+
+function samePath(firstPath, secondPath) {
+    return firstPath.length === secondPath.length && firstPath.every((segment, index) => segment === secondPath[index]);
+}
+
+function collectEditorTextMap(nodes = []) {
+    let text = '';
+    const map = [];
+
+    const visit = (node, path) => {
+        if ('text' in node) {
+            const nodeText = node.text ?? '';
+
+            for (let offset = 0; offset < nodeText.length; offset += 1) {
+                map[text.length] = { path, offset };
+                text += nodeText[offset];
+            }
+            return;
+        }
+
+        (node.children ?? []).forEach((child, index) => visit(child, [...path, index]));
+    };
+
+    nodes.forEach((node, index) => {
+        if (index > 0) {
+            map[text.length] = null;
+            text += '\n';
+        }
+
+        visit(node, [index]);
+    });
+
+    return { text, map };
+}
+
+function firstSafeReplacement(match) {
+    const original = match.original ?? '';
+    const replacement = match.replacements?.[0] ?? '';
+
+    if (!replacement || replacement === original || replacement.includes('\n')) {
+        return null;
+    }
+
+    if (replacement.length > Math.max(40, original.length * 3)) {
+        return null;
+    }
+
+    return replacement;
+}
+
+function isSafeAutoCorrectMatch(match) {
+    const category = match.rule?.category ?? '';
+    const issueType = match.rule?.issueType ?? '';
+    const original = match.original ?? '';
+
+    if (!match.length || match.length > 60 || original.includes('\n')) {
+        return false;
+    }
+
+    if (category === 'TYPOS' && original.length > 1 && original === original.toUpperCase()) {
+        return false;
+    }
+
+    return SAFE_AUTO_CORRECT_CATEGORIES.has(category) || SAFE_AUTO_CORRECT_ISSUE_TYPES.has(issueType);
+}
+
 const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     { value, readOnly = false, onOpenOcr, onContentChange, placeholder = 'Write your note here...' },
     ref,
@@ -661,6 +747,9 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     const editorValue = useMemo(() => deserializeHtmlToValue(value ?? ''), [value]);
     const [formatStatus, setFormatStatus] = useState('');
     const [formatError, setFormatError] = useState('');
+    const [autoCorrectStatus, setAutoCorrectStatus] = useState('');
+    const [autoCorrectError, setAutoCorrectError] = useState('');
+    const [autoCorrectProcessing, setAutoCorrectProcessing] = useState(false);
     const [dictationStatus, setDictationStatus] = useState('');
     const [dictationError, setDictationError] = useState('');
     const [isDictating, setIsDictating] = useState(false);
@@ -797,6 +886,93 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
         }
 
         startDictation();
+    };
+
+    const applyAutoCorrect = async () => {
+        if (!editor || readOnly || autoCorrectProcessing) {
+            return;
+        }
+
+        const { text, map } = collectEditorTextMap(editor.children);
+
+        setAutoCorrectError('');
+        setAutoCorrectStatus('');
+
+        if (!text.trim()) {
+            setAutoCorrectStatus('Nothing to correct yet.');
+            return;
+        }
+
+        setAutoCorrectProcessing(true);
+
+        try {
+            const response = await fetch(route('auto-correct.check'), {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                body: JSON.stringify({ text }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Auto correct is unavailable right now.');
+            }
+
+            const payload = await response.json();
+            const candidates = (payload.matches ?? [])
+                .map((match) => ({
+                    ...match,
+                    original: text.slice(match.offset, match.offset + match.length),
+                }))
+                .filter(isSafeAutoCorrectMatch)
+                .map((match) => ({
+                    ...match,
+                    replacement: firstSafeReplacement(match),
+                }))
+                .filter((match) => match.replacement)
+                .slice(0, 25)
+                .sort((first, second) => second.offset - first.offset);
+
+            if (!candidates.length) {
+                setAutoCorrectStatus('No safe spelling or grammar fixes found.');
+                return;
+            }
+
+            let applied = 0;
+            let skipped = 0;
+
+            candidates.forEach((match) => {
+                const start = map[match.offset];
+                const end = map[match.offset + match.length - 1];
+
+                if (!start || !end || !samePath(start.path, end.path)) {
+                    skipped += 1;
+                    return;
+                }
+
+                editor.tf.select({
+                    anchor: { path: start.path, offset: start.offset },
+                    focus: { path: end.path, offset: end.offset + 1 },
+                });
+                editor.tf.insertText(match.replacement);
+                applied += 1;
+            });
+
+            editor.tf.focus();
+            onContentChange?.();
+
+            setAutoCorrectStatus(
+                applied
+                    ? `Applied ${applied} safe correction${applied === 1 ? '' : 's'}${skipped ? `, skipped ${skipped} formatting-sensitive suggestion${skipped === 1 ? '' : 's'}` : ''}.`
+                    : 'Suggestions were found, but none could be safely applied without changing formatting.',
+            );
+        } catch (error) {
+            setAutoCorrectError(error.message || 'Auto correct failed. Please try again.');
+        } finally {
+            setAutoCorrectProcessing(false);
+        }
     };
 
     const applyAutoFormat = () => {
@@ -957,10 +1133,11 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                 editor.tf.focus();
             },
             autoFormat: applyAutoFormat,
+            autoCorrect: applyAutoCorrect,
             toggleDictation,
             stopDictation,
         }),
-        [editor, isDictating],
+        [editor, isDictating, autoCorrectProcessing],
     );
 
     if (!editor) {
@@ -1006,8 +1183,10 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                     <PlateToolbar
                         onOpenOcr={onOpenOcr}
                         onRequestDictation={toggleDictation}
+                        onRequestAutoCorrect={applyAutoCorrect}
                         onFormatChange={onContentChange}
                         isDictating={isDictating}
+                        autoCorrectProcessing={autoCorrectProcessing}
                     />
                 ) : null}
                 {dictationError ? (
@@ -1018,6 +1197,16 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                 {!dictationError && dictationStatus ? (
                     <p className="mb-3 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-100">
                         {dictationStatus}
+                    </p>
+                ) : null}
+                {autoCorrectError ? (
+                    <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                        {autoCorrectError}
+                    </p>
+                ) : null}
+                {!autoCorrectError && autoCorrectStatus ? (
+                    <p className="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                        {autoCorrectStatus}
                     </p>
                 ) : null}
                 {formatError ? (

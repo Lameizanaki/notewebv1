@@ -22,6 +22,11 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'languagetool' => [
+        'base_url' => env('LANGUAGETOOL_BASE_URL', 'https://api.languagetool.org/v2'),
+        'timeout' => env('LANGUAGETOOL_TIMEOUT', 10),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
