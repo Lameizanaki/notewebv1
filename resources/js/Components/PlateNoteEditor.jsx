@@ -38,7 +38,7 @@ const editorShellClassName =
     'min-h-[34rem] rounded-xl border border-slate-800/90 bg-slate-950/70 p-4 shadow-[0_28px_80px_rgba(2,6,23,0.45)]';
 
 const editableClassName =
-    'min-h-[26rem] rounded-lg px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_li]:pl-1 [&_li]:text-slate-100 [&_ul_ol]:mt-2 [&_ul_ul]:mt-2';
+    'min-h-[26rem] rounded-lg px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6 [&_p]:my-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_li]:pl-1 [&_li]:text-slate-100 [&_ul_ol]:mt-1 [&_ul_ul]:mt-1';
 
 const emptyValue = [{ type: 'p', children: [{ text: '' }] }];
 
@@ -318,7 +318,7 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="ul"
-                    className="my-4 list-disc space-y-2 pl-6 marker:text-emerald-300"
+                    className="my-2 list-disc space-y-1 pl-6 marker:text-emerald-300"
                 />
             );
         case 'ol':
@@ -326,7 +326,7 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="ol"
-                    className="my-4 list-decimal space-y-2 pl-6 marker:text-emerald-300"
+                    className="my-2 list-decimal space-y-1 pl-6 marker:text-emerald-300"
                 />
             );
         case 'li':
@@ -472,13 +472,15 @@ function PlateToolbar({
         editor.tf.focus();
     };
     const setAlignment = (align) => {
-        const blockEntry = getAlignTargetEntry(editor);
+        const blockEntries = getSelectedBlockEntries(editor);
 
-        if (!blockEntry) {
+        if (!blockEntries.length) {
             return;
         }
 
-        editor.tf.setNodes({ align: getSafeAlign(align) }, { at: blockEntry[1] });
+        blockEntries.forEach(([, path]) => {
+            editor.tf.setNodes({ align: getSafeAlign(align) }, { at: path });
+        });
         onFormatChange?.();
         editor.tf.focus();
     };
@@ -569,6 +571,7 @@ function PlateToolbar({
                 title="Numbered list"
                 onTrigger={() => runToggle('ol')}
             />
+            <div className="mx-1 hidden h-8 w-px bg-slate-800 lg:block" />
             <button
                 type="button"
                 onClick={onOpenOcr}
@@ -655,6 +658,41 @@ function getCurrentBlockEntry(editor) {
         at: editor.selection ?? undefined,
         match: (node) => typeof node === 'object' && node !== null && editor.api.isBlock(node),
     });
+}
+
+function getSelectedBlockEntries(editor) {
+    if (!editor.selection) {
+        const entry = getAlignTargetEntry(editor);
+        return entry ? [entry] : [];
+    }
+
+    const entries = Array.from(editor.api.nodes({
+        at: editor.selection,
+        match: (node) => typeof node === 'object' && node !== null && editor.api.isBlock(node),
+    }));
+
+    const alignableEntries = entries
+        .map((entry) => {
+            if (entry[0]?.type !== 'lic') {
+                return entry;
+            }
+
+            return editor.api.above({
+                at: entry[1],
+                match: (node) => typeof node === 'object' && node !== null && node.type === 'li',
+            }) ?? entry;
+        })
+        .filter((entry) => entry?.[0]?.type !== 'ul' && entry?.[0]?.type !== 'ol');
+
+    const uniqueEntries = new Map();
+    alignableEntries.forEach((entry) => uniqueEntries.set(entry[1].join('.'), entry));
+
+    if (uniqueEntries.size) {
+        return Array.from(uniqueEntries.values());
+    }
+
+    const entry = getAlignTargetEntry(editor);
+    return entry ? [entry] : [];
 }
 
 function getAlignTargetEntry(editor) {
@@ -752,6 +790,17 @@ function isSafeAutoCorrectMatch(match) {
     }
 
     return SAFE_AUTO_CORRECT_CATEGORIES.has(category) || SAFE_AUTO_CORRECT_ISSUE_TYPES.has(issueType);
+}
+
+function applyMatchesToPlainText(text, matches) {
+    return matches
+        .filter((match) => match.replacement)
+        .sort((first, second) => second.offset - first.offset)
+        .reduce(
+            (currentText, match) =>
+                `${currentText.slice(0, match.offset)}${match.replacement}${currentText.slice(match.offset + match.length)}`,
+            text,
+        );
 }
 
 function plainTextToEditorHtml(text = '') {
@@ -983,7 +1032,12 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             return;
         }
 
-        const { text, map } = collectEditorTextMap(editor.children);
+        const selectedRange = !isCollapsedSelection(editor.selection) ? cloneSelection(editor.selection) : null;
+        const selectedText = selectedRange ? editor.api.string(selectedRange).trim() : '';
+        const textScope = selectedText
+            ? { text: selectedText, map: null, range: selectedRange, selected: true }
+            : { ...collectEditorTextMap(editor.children), range: null, selected: false };
+        const { text, map, range, selected } = textScope;
 
         setAutoCorrectError('');
         setAutoCorrectStatus('');
@@ -1033,29 +1087,36 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             let applied = 0;
             let skipped = 0;
 
-            candidates.forEach((match) => {
-                const start = map[match.offset];
-                const end = map[match.offset + match.length - 1];
+            if (selected && range) {
+                const correctedText = applyMatchesToPlainText(text, candidates);
+                editor.tf.select(range);
+                editor.tf.insertText(correctedText);
+                applied = candidates.length;
+            } else {
+                candidates.forEach((match) => {
+                    const start = map[match.offset];
+                    const end = map[match.offset + match.length - 1];
 
-                if (!start || !end || !samePath(start.path, end.path)) {
-                    skipped += 1;
-                    return;
-                }
+                    if (!start || !end || !samePath(start.path, end.path)) {
+                        skipped += 1;
+                        return;
+                    }
 
-                editor.tf.select({
-                    anchor: { path: start.path, offset: start.offset },
-                    focus: { path: end.path, offset: end.offset + 1 },
+                    editor.tf.select({
+                        anchor: { path: start.path, offset: start.offset },
+                        focus: { path: end.path, offset: end.offset + 1 },
+                    });
+                    editor.tf.insertText(match.replacement);
+                    applied += 1;
                 });
-                editor.tf.insertText(match.replacement);
-                applied += 1;
-            });
+            }
 
             editor.tf.focus();
             onContentChange?.();
 
             setAutoCorrectStatus(
                 applied
-                    ? `Applied ${applied} safe correction${applied === 1 ? '' : 's'}${skipped ? `, skipped ${skipped} formatting-sensitive suggestion${skipped === 1 ? '' : 's'}` : ''}.`
+                    ? `Applied ${applied} safe correction${applied === 1 ? '' : 's'}${selected ? ' to selected text' : ''}${skipped ? `, skipped ${skipped} formatting-sensitive suggestion${skipped === 1 ? '' : 's'}` : ''}.`
                     : 'Suggestions were found, but none could be safely applied without changing formatting.',
             );
         } catch (error) {
@@ -1070,7 +1131,9 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             return;
         }
 
-        const text = collectEditorTextMap(editor.children).text.trim();
+        const selectedRange = !isCollapsedSelection(editor.selection) ? cloneSelection(editor.selection) : null;
+        const selectedText = selectedRange ? editor.api.string(selectedRange).trim() : '';
+        const text = selectedText || collectEditorTextMap(editor.children).text.trim();
 
         setImproveWritingError('');
         setImproveWritingStatus('');
@@ -1108,6 +1171,7 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             setImproveWritingPreview({
                 before: text,
                 after: improvedText,
+                range: selectedRange,
             });
         } catch (error) {
             setImproveWritingError(error.message || 'Improve Writing failed. Please try again.');
@@ -1121,10 +1185,19 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             return;
         }
 
-        editor.tf.setValue(deserializeHtmlToValue(plainTextToEditorHtml(improveWritingPreview.after)));
+        if (improveWritingPreview.range) {
+            editor.tf.select(improveWritingPreview.range);
+            editor.tf.insertText(improveWritingPreview.after);
+        } else {
+            editor.tf.setValue(deserializeHtmlToValue(plainTextToEditorHtml(improveWritingPreview.after)));
+        }
         editor.tf.focus();
         setImproveWritingPreview(null);
-        setImproveWritingStatus('Improved writing applied. Review it, then save the note.');
+        setImproveWritingStatus(
+            improveWritingPreview.range
+                ? 'Improved selected text applied. Review it, then save the note.'
+                : 'Improved writing applied. Review it, then save the note.',
+        );
         onContentChange?.();
     };
 

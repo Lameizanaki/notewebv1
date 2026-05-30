@@ -6,6 +6,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ImproveWritingController extends Controller
 {
@@ -56,8 +57,16 @@ class ImproveWritingController extends Controller
         }
 
         if ($response->failed()) {
+            $message = data_get($response->json(), 'error.message', 'Improve Writing is unavailable right now.');
+
+            Log::warning('Gemini improve writing request failed.', [
+                'status' => $response->status(),
+                'model' => $model,
+                'message' => $message,
+            ]);
+
             return response()->json([
-                'message' => 'Improve Writing is unavailable right now.',
+                'message' => $message,
             ], 502);
         }
 
