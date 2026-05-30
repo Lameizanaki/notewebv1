@@ -1,4 +1,5 @@
 import NoteEditor from '@/Components/NoteEditor';
+import Icon from '@/Components/Icon';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
@@ -16,8 +17,9 @@ export default function Show({ note, tags, ocrUploads }) {
             actions={
                 <Link
                     href={route('notes.edit', note.id)}
-                    className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                 >
+                    <Icon name="fileText" className="h-4 w-4" />
                     Edit Note
                 </Link>
             }

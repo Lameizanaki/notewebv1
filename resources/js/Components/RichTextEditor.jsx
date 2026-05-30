@@ -33,10 +33,10 @@ const commandMap = {
 };
 
 const richTextStyles =
-    'min-h-[24rem] w-full rounded-3xl border border-slate-700 bg-slate-950/70 px-5 py-5 text-sm leading-7 text-white focus:border-emerald-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70 [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-400/50 [&_blockquote]:pl-4 [&_blockquote]:text-slate-300 [&_h2]:mt-5 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_li]:ml-5 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-1 [&_p]:my-3 [&_strong]:font-semibold [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_u]:underline';
+    'min-h-[24rem] w-full rounded-xl border border-slate-700 bg-slate-950/70 px-5 py-5 text-sm leading-7 text-white focus:border-emerald-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70 [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-400/50 [&_blockquote]:pl-4 [&_blockquote]:text-slate-300 [&_h2]:mt-5 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_li]:ml-5 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-1 [&_p]:my-3 [&_strong]:font-semibold [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_u]:underline';
 
 const readOnlyStyles =
-    'min-h-[24rem] rounded-3xl border border-slate-800 bg-slate-950/50 px-5 py-5 text-sm leading-7 text-white [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-400/50 [&_blockquote]:pl-4 [&_blockquote]:text-slate-300 [&_h2]:mt-5 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_li]:ml-5 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-1 [&_p]:my-3 [&_strong]:font-semibold [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_u]:underline';
+    'min-h-[24rem] rounded-xl border border-slate-800 bg-slate-950/50 px-5 py-5 text-sm leading-7 text-white [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-400/50 [&_blockquote]:pl-4 [&_blockquote]:text-slate-300 [&_h2]:mt-5 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_li]:ml-5 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-1 [&_p]:my-3 [&_strong]:font-semibold [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-1 [&_u]:underline';
 
 const placeholderStyles = 'pointer-events-none absolute left-5 top-5 text-sm text-slate-500';
 

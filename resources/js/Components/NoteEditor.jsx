@@ -1,4 +1,5 @@
 import ConfirmDialog from '@/Components/ConfirmDialog';
+import Icon from '@/Components/Icon';
 import OcrUploadModal from '@/Components/OcrUploadModal';
 import PlateNoteEditor from '@/Components/PlateNoteEditor';
 import TagManagementModal from '@/Components/TagManagementModal';
@@ -59,7 +60,7 @@ export default function NoteEditor({
                 }}
                 className="space-y-6"
             >
-                <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/30">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-slate-950/30">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="w-full">
                             <label className="text-sm font-medium text-slate-300">Title</label>
@@ -72,7 +73,7 @@ export default function NoteEditor({
                                 }}
                                 disabled={readOnly}
                                 placeholder="Lecture summary, meeting notes, project ideas..."
-                                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-lg font-semibold text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="mt-2 h-11 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 text-lg font-semibold text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
                             />
                             {form.errors.title ? <p className="mt-2 text-sm text-rose-300">{form.errors.title}</p> : null}
                         </div>
@@ -81,8 +82,9 @@ export default function NoteEditor({
                             {readOnly && note ? (
                                 <Link
                                     href={route('notes.edit', note.id)}
-                                    className="rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
+                                    <Icon name="fileText" className="h-4 w-4" />
                                     Edit Note
                                 </Link>
                             ) : null}
@@ -93,8 +95,9 @@ export default function NoteEditor({
                                         form.setData('is_pinned', !form.data.is_pinned);
                                         onContentChange?.();
                                     }}
-                                    className="rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
+                                    <Icon name="pin" className="h-4 w-4" />
                                     {form.data.is_pinned ? 'Unpin' : 'Pin'}
                                 </button>
                             ) : null}
@@ -102,8 +105,9 @@ export default function NoteEditor({
                                 <button
                                     type="button"
                                     onClick={() => setShowDeleteDialog(true)}
-                                    className="rounded-2xl border border-rose-500/40 px-4 py-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
+                                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-500/40 px-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
                                 >
+                                    <Icon name="trash" className="h-4 w-4" />
                                     Delete
                                 </button>
                             ) : null}
@@ -111,8 +115,9 @@ export default function NoteEditor({
                                 <button
                                     type="submit"
                                     disabled={form.processing}
-                                    className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
+                                    <Icon name="save" className="h-4 w-4" />
                                     Save Note
                                 </button>
                             ) : null}
@@ -134,7 +139,7 @@ export default function NoteEditor({
                     <div className="mt-6">
                         <label className="text-sm font-medium text-slate-300">Content</label>
                         {saveError ? (
-                            <p className="mb-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                            <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
                                 {saveError}
                             </p>
                         ) : null}
@@ -151,7 +156,7 @@ export default function NoteEditor({
                 </div>
 
                 {note?.tags?.length ? (
-                    <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5">
                         <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Attached Tags</h3>
                         <div className="mt-4 flex flex-wrap gap-2">
                             {note.tags.map((tag) => (

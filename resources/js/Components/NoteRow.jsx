@@ -1,4 +1,5 @@
 import ConfirmDialog from '@/Components/ConfirmDialog';
+import Icon from '@/Components/Icon';
 import TagPill from '@/Components/TagPill';
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -8,7 +9,7 @@ export default function NoteRow({ note }) {
 
     return (
         <>
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
@@ -16,7 +17,8 @@ export default function NoteRow({ note }) {
                                 {note.title}
                             </Link>
                             {note.is_pinned ? (
-                                <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs text-amber-200">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs text-amber-200">
+                                    <Icon name="pin" className="h-3 w-3" />
                                     Pinned
                                 </span>
                             ) : null}
@@ -29,19 +31,21 @@ export default function NoteRow({ note }) {
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-wrap gap-2 lg:w-52 lg:justify-end">
+                    <div className="flex shrink-0 flex-wrap gap-1.5 lg:w-52 lg:justify-end">
                         <button
                             type="button"
                             onClick={() => router.patch(route('notes.pin', note.id), {}, { preserveScroll: true })}
-                            className="rounded-2xl border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
                         >
+                            <Icon name="pin" className="h-3.5 w-3.5" />
                             {note.is_pinned ? 'Unpin' : 'Pin'}
                         </button>
                         <button
                             type="button"
                             onClick={() => setShowDelete(true)}
-                            className="rounded-2xl border border-rose-500/40 px-3 py-2 text-xs text-rose-200 transition hover:border-rose-400 hover:text-white"
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-500/40 px-2.5 text-xs text-rose-200 transition hover:border-rose-400 hover:text-white"
                         >
+                            <Icon name="trash" className="h-3.5 w-3.5" />
                             Delete
                         </button>
                     </div>

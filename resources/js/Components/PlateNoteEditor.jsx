@@ -1,3 +1,4 @@
+import Icon from '@/Components/Icon';
 import { normalizeEditorHtml, sanitizeEditorHtml } from '@/lib/noteContent';
 import {
     BasicBlocksPlugin,
@@ -34,10 +35,10 @@ const AlignmentPlugin = createPlatePlugin({
 const plugins = [BasicBlocksPlugin, BasicMarksPlugin, ListClassicPlugin, AlignmentPlugin];
 
 const editorShellClassName =
-    'min-h-[34rem] rounded-[2rem] border border-slate-800/90 bg-slate-950/70 p-4 shadow-[0_28px_80px_rgba(2,6,23,0.45)]';
+    'min-h-[34rem] rounded-xl border border-slate-800/90 bg-slate-950/70 p-4 shadow-[0_28px_80px_rgba(2,6,23,0.45)]';
 
 const editableClassName =
-    'min-h-[26rem] rounded-[1.5rem] px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_li]:pl-1 [&_li]:text-slate-100 [&_ul_ol]:mt-2 [&_ul_ul]:mt-2';
+    'min-h-[26rem] rounded-lg px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_li]:pl-1 [&_li]:text-slate-100 [&_ul_ol]:mt-2 [&_ul_ul]:mt-2';
 
 const emptyValue = [{ type: 'p', children: [{ text: '' }] }];
 
@@ -388,24 +389,26 @@ function renderLeaf(props) {
     return <PlateLeaf {...props}>{content}</PlateLeaf>;
 }
 
-function ToolbarButton({ active = false, label, onTrigger, title, wide = false }) {
+function ToolbarButton({ active = false, children, icon, label, onTrigger, title, wide = false }) {
     return (
         <button
             type="button"
             title={title}
+            aria-label={title}
             onMouseDown={(event) => {
                 event.preventDefault();
                 onTrigger?.();
             }}
-            className={`inline-flex items-center justify-center rounded-2xl border px-3 py-2 text-xs font-medium transition ${
-                wide ? 'min-w-[5.5rem]' : 'min-w-10'
+            className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition ${
+                wide ? 'min-w-[4.75rem]' : 'w-9'
             } ${
                 active
                     ? 'border-emerald-400/70 bg-emerald-400/12 text-emerald-100'
                     : 'border-slate-700 bg-slate-950/60 text-slate-300 hover:border-slate-500 hover:text-white'
             }`}
         >
-            {label}
+            {icon ? <Icon name={icon} className="h-4 w-4" /> : null}
+            {children ?? label}
         </button>
     );
 }
@@ -477,96 +480,98 @@ function PlateToolbar({
     };
 
     return (
-        <div className="sticky top-3 z-10 mb-5 flex flex-wrap gap-2 rounded-[1.5rem] border border-slate-800/80 bg-slate-950/90 p-3 backdrop-blur">
+        <div className="sticky top-3 z-10 mb-5 flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-800/80 bg-slate-950/90 p-2 backdrop-blur">
             <ToolbarButton
                 active={!!marks.bold}
-                label="B"
+                icon="bold"
                 title="Bold"
                 onTrigger={() => runToggle(KEYS.bold)}
             />
             <ToolbarButton
                 active={!!marks.italic}
-                label="I"
+                icon="italic"
                 title="Italic"
                 onTrigger={() => runToggle(KEYS.italic)}
             />
             <ToolbarButton
                 active={!!marks.underline}
-                label="U"
+                icon="underline"
                 title="Underline"
                 onTrigger={() => runToggle(KEYS.underline)}
             />
             <ToolbarButton
                 active={!!marks.strikethrough}
-                label="S"
+                icon="strikethrough"
                 title="Strikethrough"
                 onTrigger={() => runToggle(KEYS.strikethrough)}
             />
-            <div className="mx-1 hidden h-10 w-px bg-slate-800 lg:block" />
+            <div className="mx-1 hidden h-8 w-px bg-slate-800 lg:block" />
             <ToolbarButton
                 active={currentBlockType === headingType}
-                label="Heading"
+                icon="text"
                 title="Heading"
                 wide
                 onTrigger={() => runToggle('h2')}
-            />
+            >
+                H
+            </ToolbarButton>
             <ToolbarButton
                 active={currentBlockType === subheadingType}
-                label="Subhead"
+                icon="text"
                 title="Subheading"
                 wide
                 onTrigger={() => runToggle('h3')}
-            />
+            >
+                H2
+            </ToolbarButton>
             <ToolbarButton
                 active={currentBlockType === paragraphType}
-                label="Text"
+                icon="text"
                 title="Paragraph"
                 wide
                 onTrigger={resetToParagraph}
-            />
-            <div className="mx-1 hidden h-10 w-px bg-slate-800 lg:block" />
+            >
+                Text
+            </ToolbarButton>
+            <div className="mx-1 hidden h-8 w-px bg-slate-800 lg:block" />
             <ToolbarButton
                 active={currentBlockAlign === 'left'}
-                label="Left"
+                icon="alignLeft"
                 title="Align left"
-                wide
                 onTrigger={() => setAlignment('left')}
             />
             <ToolbarButton
                 active={currentBlockAlign === 'center'}
-                label="Center"
+                icon="alignCenter"
                 title="Align center"
-                wide
                 onTrigger={() => setAlignment('center')}
             />
             <ToolbarButton
                 active={currentBlockAlign === 'right'}
-                label="Right"
+                icon="alignRight"
                 title="Align right"
-                wide
                 onTrigger={() => setAlignment('right')}
             />
-            <div className="mx-1 hidden h-10 w-px bg-slate-800 lg:block" />
+            <div className="mx-1 hidden h-8 w-px bg-slate-800 lg:block" />
             <ToolbarButton
                 active={activeListType === bulletedListType}
-                label="Bullets"
+                icon="bulletList"
                 title="Bulleted list"
-                wide
                 onTrigger={() => runToggle('ul')}
             />
             <ToolbarButton
                 active={activeListType === numberedListType}
-                label="Numbered"
+                icon="numberList"
                 title="Numbered list"
-                wide
                 onTrigger={() => runToggle('ol')}
             />
             <button
                 type="button"
                 onClick={onOpenOcr}
-                className="rounded-2xl border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-700 px-2.5 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
             >
-                OCR Upload
+                <Icon name="fileText" className="h-4 w-4" />
+                OCR
             </button>
             <button
                 type="button"
@@ -574,13 +579,14 @@ function PlateToolbar({
                     event.preventDefault();
                     onRequestDictation?.();
                 }}
-                className={`rounded-2xl border px-3 py-2 text-xs transition ${
+                className={`inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-xs transition ${
                     isDictating
                         ? 'border-rose-400/70 bg-rose-500/10 text-rose-100'
                         : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
                 }`}
             >
-                {isDictating ? 'Stop Dictation' : 'Dictation'}
+                <Icon name="mic" className="h-4 w-4" />
+                {isDictating ? 'Stop' : 'Dictate'}
             </button>
         </div>
     );
@@ -1005,22 +1011,22 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                     />
                 ) : null}
                 {dictationError ? (
-                    <p className="mb-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                    <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
                         {dictationError}
                     </p>
                 ) : null}
                 {!dictationError && dictationStatus ? (
-                    <p className="mb-3 rounded-2xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-100">
+                    <p className="mb-3 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-100">
                         {dictationStatus}
                     </p>
                 ) : null}
                 {formatError ? (
-                    <p className="mb-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                    <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
                         {formatError}
                     </p>
                 ) : null}
                 {!formatError && formatStatus ? (
-                    <p className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                    <p className="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
                         {formatStatus}
                     </p>
                 ) : null}

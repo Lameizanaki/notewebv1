@@ -39,9 +39,9 @@ export default function UpdateProfileInformationForm({
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center">
                     {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.name} className="h-20 w-20 rounded-3xl object-cover" />
+                        <img src={user.avatar_url} alt={user.name} className="h-20 w-20 rounded-xl object-cover" />
                     ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-800 text-lg font-semibold text-white">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-800 text-lg font-semibold text-white">
                             {user.name?.slice(0, 2)?.toUpperCase()}
                         </div>
                     )}
@@ -53,7 +53,7 @@ export default function UpdateProfileInformationForm({
                             type="file"
                             accept=".png,.jpg,.jpeg,.webp"
                             onChange={(event) => setData('avatar', event.target.files?.[0] ?? null)}
-                            className="mt-2 block w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
+                            className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
                         />
                         <InputError className="mt-2" message={errors.avatar} />
                     </div>
@@ -102,7 +102,7 @@ export default function UpdateProfileInformationForm({
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
-                    <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                    <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-4">
                         <p className="text-sm text-amber-100">
                             Your email address is unverified.
                             <Link

@@ -1,4 +1,5 @@
 import Sidebar from '@/Components/Sidebar';
+import Icon from '@/Components/Icon';
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -126,15 +127,15 @@ export default function AppLayout({ title, actions, children }) {
                 ) : null}
 
                 <main className="min-w-0 flex-1 pb-6">
-                    <div className="mb-5 flex flex-col gap-4 rounded-[2rem] border border-slate-800/90 bg-slate-900/82 p-5 shadow-[0_30px_80px_rgba(2,6,23,0.36)] md:flex-row md:items-center md:justify-between">
+                    <div className="mb-5 flex flex-col gap-4 rounded-xl border border-slate-800/90 bg-slate-900/82 p-5 shadow-[0_30px_80px_rgba(2,6,23,0.36)] md:flex-row md:items-center md:justify-between">
                         <div className="flex items-start gap-3">
                             <button
                                 type="button"
                                 onClick={toggleSidebar}
-                                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/70 text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-950/70 text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 aria-label={sidebarOpen || mobileSidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
                             >
-                                {sidebarOpen || mobileSidebarOpen ? '||' : '='}
+                                <Icon name={sidebarOpen || mobileSidebarOpen ? 'x' : 'menu'} className="h-4 w-4" />
                             </button>
 
                             <div>
@@ -149,7 +150,7 @@ export default function AppLayout({ title, actions, children }) {
                     </div>
 
                     {flash.success ? (
-                        <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                        <div className="mb-5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                             {flash.success}
                         </div>
                     ) : null}

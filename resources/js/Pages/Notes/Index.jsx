@@ -1,4 +1,5 @@
 import FilterDropdown from '@/Components/FilterDropdown';
+import Icon from '@/Components/Icon';
 import NoteList from '@/Components/NoteList';
 import SearchInput from '@/Components/SearchInput';
 import SortDropdown from '@/Components/SortDropdown';
@@ -29,8 +30,9 @@ export default function Index({ notes, tags, filters }) {
             actions={
                 <Link
                     href={route('notes.create')}
-                    className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                 >
+                    <Icon name="plus" className="h-4 w-4" />
                     New Note
                 </Link>
             }
@@ -38,7 +40,7 @@ export default function Index({ notes, tags, filters }) {
             <Head title="All Notes" />
 
             <div className="space-y-6">
-                <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
                     <div className="flex flex-col gap-4 xl:flex-row">
                         <SearchInput
                             value={search}

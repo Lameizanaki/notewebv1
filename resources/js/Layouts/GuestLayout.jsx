@@ -6,9 +6,9 @@ export default function GuestLayout({ children }) {
     return (
         <div className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
             <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-10 lg:grid lg:grid-cols-[1.1fr,0.9fr]">
-                <div className="hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-10 shadow-2xl shadow-slate-950/40 lg:block">
+                <div className="hidden rounded-xl border border-slate-800 bg-slate-900/70 p-10 shadow-2xl shadow-slate-950/40 lg:block">
                     <Link href="/" className="inline-flex items-center gap-3 text-slate-100">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400 font-bold text-slate-950">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-400 font-bold text-slate-950">
                             QN
                         </span>
                         <span>
@@ -32,7 +32,7 @@ export default function GuestLayout({ children }) {
                 <div className="w-full">
                     <div className="mb-6 lg:hidden">
                         <Link href="/" className="inline-flex items-center gap-3 text-slate-100">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-400 font-bold text-slate-950">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-400 font-bold text-slate-950">
                                 QN
                             </span>
                             <span>
@@ -42,7 +42,7 @@ export default function GuestLayout({ children }) {
                         </Link>
                     </div>
 
-                    <div className="w-full overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl shadow-slate-950/40 sm:p-8">
+                    <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl shadow-slate-950/40 sm:p-8">
                         {children}
                     </div>
                 </div>

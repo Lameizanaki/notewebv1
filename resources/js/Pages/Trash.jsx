@@ -1,4 +1,5 @@
 import TagPill from '@/Components/TagPill';
+import Icon from '@/Components/Icon';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, router } from '@inertiajs/react';
 
@@ -10,7 +11,7 @@ export default function Trash({ notes }) {
             <div className="space-y-4">
                 {notes.length ? (
                     notes.map((note) => (
-                        <div key={note.id} className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
+                        <div key={note.id} className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-white">{note.title}</h2>
@@ -29,15 +30,17 @@ export default function Trash({ notes }) {
                                     <button
                                         type="button"
                                         onClick={() => router.patch(route('trash.restore', note.id))}
-                                        className="rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                     >
+                                        <Icon name="fileText" className="h-4 w-4" />
                                         Restore
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => router.delete(route('trash.destroy', note.id))}
-                                        className="rounded-2xl border border-rose-500/40 px-4 py-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-rose-500/40 px-4 py-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
                                     >
+                                        <Icon name="trash" className="h-4 w-4" />
                                         Permanently Delete
                                     </button>
                                 </div>
@@ -45,7 +48,7 @@ export default function Trash({ notes }) {
                         </div>
                     ))
                 ) : (
-                    <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/60 px-6 py-12 text-center">
+                    <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/60 px-6 py-12 text-center">
                         <h2 className="text-2xl font-semibold text-white">Trash is empty</h2>
                         <p className="mt-3 text-sm text-slate-400">Deleted notes will appear here until they are restored or permanently removed.</p>
                     </div>

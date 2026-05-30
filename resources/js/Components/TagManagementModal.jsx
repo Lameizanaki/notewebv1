@@ -1,5 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
+import Icon from '@/Components/Icon';
 
 export default function TagManagementModal({ open, onClose, tags = [] }) {
     const createForm = useForm({ name: '' });
@@ -28,14 +29,19 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
-            <div className="w-full max-w-2xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-slate-950/60">
+            <div className="w-full max-w-2xl rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-slate-950/60">
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <h3 className="text-lg font-semibold text-white">Manage Tags</h3>
                         <p className="mt-2 text-sm text-slate-400">Create, rename, or delete note tags.</p>
                     </div>
-                    <button type="button" onClick={onClose} className="text-sm text-slate-400 transition hover:text-white">
-                        Close
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-slate-400 transition hover:border-slate-500 hover:text-white"
+                        aria-label="Close tag manager"
+                    >
+                        <Icon name="x" className="h-4 w-4" />
                     </button>
                 </div>
 
@@ -47,20 +53,21 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
                             onSuccess: () => createForm.reset('name'),
                         });
                     }}
-                    className="mt-6 flex gap-3"
+                    className="mt-6 flex flex-col gap-3 sm:flex-row"
                 >
                     <input
                         type="text"
                         value={createForm.data.name}
                         onChange={(event) => createForm.setData('name', event.target.value)}
                         placeholder="New tag name"
-                        className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-0"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-0"
                     />
                     <button
                         type="submit"
                         disabled={createForm.processing}
-                        className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                     >
+                        <Icon name="plus" className="h-4 w-4" />
                         Add Tag
                     </button>
                 </form>
@@ -71,7 +78,7 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
                         tags.map((tag) => (
                             <div
                                 key={tag.id}
-                                className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 md:flex-row md:items-center"
+                                className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-4 md:flex-row md:items-center"
                             >
                                 <input
                                     type="text"
@@ -82,20 +89,20 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
                                             [tag.id]: event.target.value,
                                         }))
                                     }
-                                    className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-0"
+                                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-0"
                                 />
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
                                         onClick={() => renameTag(tag.id)}
-                                        className="rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                        className="rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                     >
                                         Rename
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => router.delete(route('tags.destroy', tag.id), { preserveScroll: true })}
-                                        className="rounded-2xl border border-rose-500/40 px-4 py-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
+                                        className="rounded-lg border border-rose-500/40 px-4 py-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
                                     >
                                         Delete
                                     </button>
@@ -103,7 +110,7 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
                             </div>
                         ))
                     ) : (
-                        <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-8 text-center text-sm text-slate-500">
+                        <div className="rounded-xl border border-dashed border-slate-700 px-4 py-8 text-center text-sm text-slate-500">
                             No tags created yet.
                         </div>
                     )}
