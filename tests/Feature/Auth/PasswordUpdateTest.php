@@ -29,6 +29,7 @@ class PasswordUpdateTest extends TestCase
             ->assertRedirect('/settings');
 
         $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
+        $this->assertNotNull($user->password_set_at);
     }
 
     public function test_correct_password_must_be_provided_to_update_password(): void
@@ -47,5 +48,30 @@ class PasswordUpdateTest extends TestCase
         $response
             ->assertSessionHasErrors('current_password')
             ->assertRedirect('/settings');
+    }
+
+    public function test_password_can_be_set_without_current_password_for_google_only_account(): void
+    {
+        $user = User::factory()->create([
+            'google_id' => 'google-123',
+            'password_set_at' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->from('/settings')
+            ->put('/password', [
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/settings');
+
+        $user->refresh();
+
+        $this->assertTrue(Hash::check('new-password', $user->password));
+        $this->assertNotNull($user->password_set_at);
     }
 }

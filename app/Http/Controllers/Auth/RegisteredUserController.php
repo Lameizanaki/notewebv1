@@ -46,6 +46,7 @@ class RegisteredUserController extends Controller
             'username' => UniqueUsername::make($request->name ?: Str::before($request->email, '@')),
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'password_set_at' => now(),
         ]);
 
         Auth::login($user);

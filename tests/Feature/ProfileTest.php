@@ -101,4 +101,46 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->fresh());
     }
+
+    public function test_google_only_user_can_delete_account_with_delete_confirmation(): void
+    {
+        $user = User::factory()->create([
+            'google_id' => 'google-123',
+            'password_set_at' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->delete('/settings', [
+                'delete_confirmation' => 'DELETE',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/');
+
+        $this->assertGuest();
+        $this->assertNull($user->fresh());
+    }
+
+    public function test_google_only_user_must_confirm_delete_account(): void
+    {
+        $user = User::factory()->create([
+            'google_id' => 'google-123',
+            'password_set_at' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->from('/settings')
+            ->delete('/settings', [
+                'delete_confirmation' => 'delete',
+            ]);
+
+        $response
+            ->assertSessionHasErrors('delete_confirmation')
+            ->assertRedirect('/settings');
+
+        $this->assertNotNull($user->fresh());
+    }
 }

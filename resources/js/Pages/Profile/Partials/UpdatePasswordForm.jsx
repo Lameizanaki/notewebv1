@@ -6,7 +6,7 @@ import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 
-export default function UpdatePasswordForm({ className = '' }) {
+export default function UpdatePasswordForm({ hasPassword = true, className = '' }) {
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
 
@@ -38,7 +38,7 @@ export default function UpdatePasswordForm({ className = '' }) {
 
                 if (formErrors.current_password) {
                     reset('current_password');
-                    currentPasswordInput.current.focus();
+                    currentPasswordInput.current?.focus();
                 }
             },
         });
@@ -47,26 +47,30 @@ export default function UpdatePasswordForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-white">Update Password</h2>
+                <h2 className="text-lg font-medium text-white">{hasPassword ? 'Update Password' : 'Set Password'}</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                    Keep your account secure with a strong password.
+                    {hasPassword
+                        ? 'Keep your account secure with a strong password.'
+                        : 'Set a password if you want to sign in without Google or use password-protected actions.'}
                 </p>
             </header>
 
             <form onSubmit={updatePassword} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel htmlFor="current_password" value="Current Password" />
-                    <TextInput
-                        id="current_password"
-                        ref={currentPasswordInput}
-                        value={data.current_password}
-                        onChange={(e) => setData('current_password', e.target.value)}
-                        type="password"
-                        className="mt-2 block w-full"
-                        autoComplete="current-password"
-                    />
-                    <InputError message={errors.current_password} className="mt-2" />
-                </div>
+                {hasPassword ? (
+                    <div>
+                        <InputLabel htmlFor="current_password" value="Current Password" />
+                        <TextInput
+                            id="current_password"
+                            ref={currentPasswordInput}
+                            value={data.current_password}
+                            onChange={(e) => setData('current_password', e.target.value)}
+                            type="password"
+                            className="mt-2 block w-full"
+                            autoComplete="current-password"
+                        />
+                        <InputError message={errors.current_password} className="mt-2" />
+                    </div>
+                ) : null}
 
                 <div>
                     <InputLabel htmlFor="password" value="New Password" />
@@ -96,7 +100,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save Password</PrimaryButton>
+                    <PrimaryButton disabled={processing}>{hasPassword ? 'Save Password' : 'Set Password'}</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}

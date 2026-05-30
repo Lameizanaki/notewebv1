@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'username', 'email', 'password', 'avatar', 'google_id', 'email_verified_at'])]
+#[Fillable(['name', 'username', 'email', 'password', 'password_set_at', 'avatar', 'google_id', 'email_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -25,7 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<int, string>
      */
-    protected $appends = ['avatar_url'];
+    protected $appends = ['avatar_url', 'has_password'];
 
     public function notes(): HasMany
     {
@@ -51,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'password_set_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -58,5 +59,10 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function avatarUrl(): Attribute
     {
         return Attribute::get(fn () => $this->avatar ? Storage::url($this->avatar) : null);
+    }
+
+    protected function hasPassword(): Attribute
+    {
+        return Attribute::get(fn () => $this->password_set_at !== null);
     }
 }

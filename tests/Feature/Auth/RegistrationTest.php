@@ -31,5 +31,6 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'username' => 'test_user',
         ]);
+        $this->assertNotNull(auth()->user()->password_set_at);
     }
 }

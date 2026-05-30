@@ -7,9 +7,10 @@ import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
-export default function DeleteUserForm({ className = '' }) {
+export default function DeleteUserForm({ hasPassword = true, className = '' }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const passwordInput = useRef();
+    const confirmationInput = useRef();
 
     const {
         data,
@@ -21,6 +22,7 @@ export default function DeleteUserForm({ className = '' }) {
         clearErrors,
     } = useForm({
         password: '',
+        delete_confirmation: '',
     });
 
     const confirmUserDeletion = () => {
@@ -33,7 +35,13 @@ export default function DeleteUserForm({ className = '' }) {
         destroy(route('settings.destroy'), {
             preserveScroll: true,
             onSuccess: () => closeModal(),
-            onError: () => passwordInput.current.focus(),
+            onError: () => {
+                if (hasPassword) {
+                    passwordInput.current?.focus();
+                } else {
+                    confirmationInput.current?.focus();
+                }
+            },
             onFinish: () => reset(),
         });
     };
@@ -60,26 +68,47 @@ export default function DeleteUserForm({ className = '' }) {
                     <h2 className="text-lg font-medium text-white">Are you sure you want to delete your account?</h2>
 
                     <p className="mt-2 text-sm text-slate-400">
-                        Please enter your password to confirm permanent account deletion.
+                        {hasPassword
+                            ? 'Please enter your password to confirm permanent account deletion.'
+                            : 'This account does not have a password yet. Type DELETE to confirm permanent account deletion.'}
                     </p>
 
-                    <div className="mt-6">
-                        <InputLabel htmlFor="password" value="Password" className="sr-only" />
+                    {hasPassword ? (
+                        <div className="mt-6">
+                            <InputLabel htmlFor="password" value="Password" className="sr-only" />
 
-                        <TextInput
-                            id="password"
-                            type="password"
-                            name="password"
-                            ref={passwordInput}
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            className="mt-1 block w-full"
-                            isFocused
-                            placeholder="Password"
-                        />
+                            <TextInput
+                                id="password"
+                                type="password"
+                                name="password"
+                                ref={passwordInput}
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                className="mt-1 block w-full"
+                                isFocused
+                                placeholder="Password"
+                            />
 
-                        <InputError message={errors.password} className="mt-2" />
-                    </div>
+                            <InputError message={errors.password} className="mt-2" />
+                        </div>
+                    ) : (
+                        <div className="mt-6">
+                            <InputLabel htmlFor="delete_confirmation" value="Type DELETE to confirm" className="sr-only" />
+
+                            <TextInput
+                                id="delete_confirmation"
+                                name="delete_confirmation"
+                                ref={confirmationInput}
+                                value={data.delete_confirmation}
+                                onChange={(e) => setData('delete_confirmation', e.target.value)}
+                                className="mt-1 block w-full"
+                                isFocused
+                                placeholder="Type DELETE"
+                            />
+
+                            <InputError message={errors.delete_confirmation} className="mt-2" />
+                        </div>
+                    )}
 
                     <div className="mt-6 flex justify-end gap-3">
                         <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
