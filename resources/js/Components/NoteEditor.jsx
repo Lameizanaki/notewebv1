@@ -78,7 +78,7 @@ export default function NoteEditor({
                             {form.errors.title ? <p className="mt-2 text-sm text-rose-300">{form.errors.title}</p> : null}
                         </div>
 
-                        <div className="flex w-full flex-wrap items-center gap-2 lg:w-32 lg:flex-col lg:items-stretch lg:pt-7">
+                        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:justify-end lg:pt-7">
                             {readOnly && note ? (
                                 <Link
                                     href={route('notes.edit', note.id)}
