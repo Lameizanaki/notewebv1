@@ -30,22 +30,6 @@ export default function Register() {
                 <p className="mt-2 text-sm text-slate-400">Start capturing notes with a simple placeholder workspace.</p>
             </div>
 
-            <Link
-                href={route('auth.google.redirect')}
-                className="mb-5 inline-flex w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900"
-            >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-950">
-                    G
-                </span>
-                Continue with Google
-            </Link>
-
-            <div className="mb-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-slate-800" />
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-500">or</span>
-                <div className="h-px flex-1 bg-slate-800" />
-            </div>
-
             <form onSubmit={submit} className="space-y-5">
                 <div>
                     <InputLabel htmlFor="name" value="Display Name" />
@@ -117,6 +101,22 @@ export default function Register() {
                     </PrimaryButton>
                 </div>
             </form>
+
+            <div className="my-5 flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-800" />
+                <span className="text-xs uppercase tracking-[0.2em] text-slate-500">or continue with</span>
+                <div className="h-px flex-1 bg-slate-800" />
+            </div>
+
+            <a
+                href={route('auth.google.redirect')}
+                className="inline-flex w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900"
+            >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-950">
+                    G
+                </span>
+                Google
+            </a>
         </GuestLayout>
     );
 }
