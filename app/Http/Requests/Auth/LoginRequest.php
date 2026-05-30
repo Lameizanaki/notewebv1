@@ -50,6 +50,10 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (Auth::user()?->password_set_at === null) {
+            Auth::user()->forceFill(['password_set_at' => now()])->save();
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

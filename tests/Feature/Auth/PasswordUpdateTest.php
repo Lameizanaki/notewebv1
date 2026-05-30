@@ -74,4 +74,20 @@ class PasswordUpdateTest extends TestCase
         $this->assertTrue(Hash::check('new-password', $user->password));
         $this->assertNotNull($user->password_set_at);
     }
+
+    public function test_password_login_repairs_missing_password_set_timestamp(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertNotNull($user->refresh()->password_set_at);
+    }
 }

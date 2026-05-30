@@ -39,14 +39,21 @@ class GoogleAuthController extends Controller
                 ->withErrors(['email' => 'Google did not return an email address.']);
         }
 
-        $user = User::where('google_id', $googleUser->getId())
-            ->orWhere('email', $email)
-            ->first();
+        $user = User::where('google_id', $googleUser->getId())->first();
+        $linkedByEmail = false;
+
+        if (! $user) {
+            $user = User::where('email', $email)->first();
+            $linkedByEmail = $user !== null;
+        }
 
         if ($user) {
             $user->forceFill([
                 'google_id' => $googleUser->getId(),
                 'email_verified_at' => $user->email_verified_at ?? now(),
+                'password_set_at' => $linkedByEmail && $user->password_set_at === null
+                    ? now()
+                    : $user->password_set_at,
             ])->save();
         } else {
             $name = $googleUser->getName() ?: Str::before($email, '@');
