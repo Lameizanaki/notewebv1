@@ -61,9 +61,10 @@ export default function NoteEditor({
                 className="space-y-6"
             >
                 <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-slate-950/30">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="w-full">
-                            <label className="text-sm font-medium text-slate-300">Title</label>
+                    <div>
+                        <label className="text-sm font-medium text-slate-300">Title</label>
+
+                        <div className="mt-2 flex flex-col gap-3 xl:flex-row xl:items-center">
                             <input
                                 type="text"
                                 value={form.data.title}
@@ -73,16 +74,14 @@ export default function NoteEditor({
                                 }}
                                 disabled={readOnly}
                                 placeholder="Lecture summary, meeting notes, project ideas..."
-                                className="mt-2 h-11 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 text-lg font-semibold text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="h-11 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 text-lg font-semibold text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70 xl:max-w-[calc(100%-15rem)]"
                             />
-                            {form.errors.title ? <p className="mt-2 text-sm text-rose-300">{form.errors.title}</p> : null}
-                        </div>
 
-                        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:justify-end lg:pt-7">
+                            <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:flex-nowrap xl:justify-end">
                             {readOnly && note ? (
                                 <Link
                                     href={route('notes.edit', note.id)}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
                                     <Icon name="fileText" className="h-4 w-4" />
                                     Edit Note
@@ -95,7 +94,7 @@ export default function NoteEditor({
                                         form.setData('is_pinned', !form.data.is_pinned);
                                         onContentChange?.();
                                     }}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
                                     <Icon name="pin" className="h-4 w-4" />
                                     {form.data.is_pinned ? 'Unpin' : 'Pin'}
@@ -105,7 +104,7 @@ export default function NoteEditor({
                                 <button
                                     type="button"
                                     onClick={() => setShowDeleteDialog(true)}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-rose-500/40 px-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-rose-500/40 px-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
                                 >
                                     <Icon name="trash" className="h-4 w-4" />
                                     Delete
@@ -115,13 +114,16 @@ export default function NoteEditor({
                                 <button
                                     type="submit"
                                     disabled={form.processing}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-emerald-400 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     <Icon name="save" className="h-4 w-4" />
                                     Save Note
                                 </button>
                             ) : null}
+                            </div>
                         </div>
+
+                        {form.errors.title ? <p className="mt-2 text-sm text-rose-300">{form.errors.title}</p> : null}
                     </div>
 
                     {!readOnly ? (
