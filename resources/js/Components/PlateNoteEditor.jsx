@@ -416,10 +416,12 @@ function ToolbarButton({ active = false, children, icon, label, onTrigger, title
 function PlateToolbar({
     isDictating = false,
     autoCorrectProcessing = false,
+    improveWritingProcessing = false,
     onFormatChange,
     onOpenOcr,
     onRequestDictation,
     onRequestAutoCorrect,
+    onRequestImproveWriting,
 }) {
     const editor = useEditorRef();
     const marks = useEditorSelector((currentEditor) => currentEditor.api.marks?.() ?? {}, []);
@@ -602,6 +604,18 @@ function PlateToolbar({
                 <Icon name="sparkles" className="h-4 w-4" />
                 {autoCorrectProcessing ? 'Checking...' : 'Auto Correct'}
             </button>
+            <button
+                type="button"
+                disabled={improveWritingProcessing}
+                onMouseDown={(event) => {
+                    event.preventDefault();
+                    onRequestImproveWriting?.();
+                }}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-400/40 px-2.5 text-xs text-emerald-100 transition hover:border-emerald-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                <Icon name="wand" className="h-4 w-4" />
+                {improveWritingProcessing ? 'Improving...' : 'Improve'}
+            </button>
         </div>
     );
 }
@@ -740,16 +754,92 @@ function isSafeAutoCorrectMatch(match) {
     return SAFE_AUTO_CORRECT_CATEGORIES.has(category) || SAFE_AUTO_CORRECT_ISSUE_TYPES.has(issueType);
 }
 
+function plainTextToEditorHtml(text = '') {
+    const paragraphs = text
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    if (!paragraphs.length) {
+        return '<p></p>';
+    }
+
+    return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('');
+}
+
+function ImproveWritingPreviewModal({ open, beforeText, afterText, onApply, onClose }) {
+    if (!open) {
+        return null;
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
+            <div className="w-full max-w-5xl rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-slate-950/60">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">Improve Writing Preview</h3>
+                        <p className="mt-2 text-sm text-slate-400">
+                            Review the Gemini rewrite before replacing your note content.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-slate-400 transition hover:border-slate-500 hover:text-white"
+                        aria-label="Close improve writing preview"
+                    >
+                        <Icon name="x" className="h-4 w-4" />
+                    </button>
+                </div>
+
+                <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+                        <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Before</h4>
+                        <p className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-sm leading-7 text-slate-300">
+                            {beforeText}
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-4">
+                        <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">After</h4>
+                        <p className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-sm leading-7 text-slate-100">
+                            {afterText}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+                    >
+                        Keep Original
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onApply}
+                        className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                    >
+                        Apply Improved Text
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     { value, readOnly = false, onOpenOcr, onContentChange, placeholder = 'Write your note here...' },
     ref,
 ) {
     const editorValue = useMemo(() => deserializeHtmlToValue(value ?? ''), [value]);
-    const [formatStatus, setFormatStatus] = useState('');
-    const [formatError, setFormatError] = useState('');
     const [autoCorrectStatus, setAutoCorrectStatus] = useState('');
     const [autoCorrectError, setAutoCorrectError] = useState('');
     const [autoCorrectProcessing, setAutoCorrectProcessing] = useState(false);
+    const [improveWritingStatus, setImproveWritingStatus] = useState('');
+    const [improveWritingError, setImproveWritingError] = useState('');
+    const [improveWritingProcessing, setImproveWritingProcessing] = useState(false);
+    const [improveWritingPreview, setImproveWritingPreview] = useState(null);
     const [dictationStatus, setDictationStatus] = useState('');
     const [dictationError, setDictationError] = useState('');
     const [isDictating, setIsDictating] = useState(false);
@@ -975,106 +1065,81 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
         }
     };
 
-    const applyAutoFormat = () => {
-        if (!editor) {
+    const requestImproveWriting = async () => {
+        if (!editor || readOnly || improveWritingProcessing) {
             return;
         }
 
-        setFormatError('');
-        setFormatStatus('');
+        const text = collectEditorTextMap(editor.children).text.trim();
+
+        setImproveWritingError('');
+        setImproveWritingStatus('');
+
+        if (!text) {
+            setImproveWritingStatus('Nothing to improve yet.');
+            return;
+        }
+
+        setImproveWritingProcessing(true);
 
         try {
-            const blockEntry = getCurrentBlockEntry(editor);
+            const response = await fetch(route('improve-writing.store'), {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                body: JSON.stringify({ text }),
+            });
 
-            if (!blockEntry) {
-                setFormatStatus('Place the cursor in a paragraph to auto format it.');
-                return;
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(payload.message || 'Improve Writing is unavailable right now.');
             }
 
-            const [, path] = blockEntry;
-            const blockRange = {
-                anchor: editor.api.start(path),
-                focus: editor.api.end(path),
-            };
-            const blockText = editor.api.string(blockRange);
-            const trimmed = blockText.trim();
+            const improvedText = (payload.improved_text ?? '').trim();
 
-            if (!trimmed) {
-                setFormatStatus('Nothing to auto format yet.');
-                return;
+            if (!improvedText) {
+                throw new Error('Improve Writing did not return text.');
             }
 
-            const rules = [
-                {
-                    pattern: /^##\s+(.+)$/,
-                    apply: (text) => {
-                        editor.tf.select(blockRange);
-                        editor.tf.insertText(text);
-                        editor.tf.setNodes({ type: editor.getType('h3') }, { at: path });
-                        setFormatStatus('Applied subheading formatting.');
-                    },
-                },
-                {
-                    pattern: /^#\s+(.+)$/,
-                    apply: (text) => {
-                        editor.tf.select(blockRange);
-                        editor.tf.insertText(text);
-                        editor.tf.setNodes({ type: editor.getType('h2') }, { at: path });
-                        setFormatStatus('Applied heading formatting.');
-                    },
-                },
-                {
-                    pattern: /^[-*]\s+(.+)$/,
-                    apply: (text) => {
-                        editor.tf.select(blockRange);
-                        editor.tf.insertText(text);
-                        editor.getPlugin({ key: 'ul' })?.transforms?.ul?.toggle?.();
-                        setFormatStatus('Applied bullet list formatting.');
-                    },
-                },
-                {
-                    pattern: /^\d+[.)]\s+(.+)$/,
-                    apply: (text) => {
-                        editor.tf.select(blockRange);
-                        editor.tf.insertText(text);
-                        editor.getPlugin({ key: 'ol' })?.transforms?.ol?.toggle?.();
-                        setFormatStatus('Applied numbered list formatting.');
-                    },
-                },
-            ];
-
-            const matchedRule = rules.find((rule) => rule.pattern.test(trimmed));
-
-            if (!matchedRule) {
-                setFormatStatus('Start a paragraph with #, ##, -, *, or 1. then click Auto Format.');
-                return;
-            }
-
-            const [, formattedText] = trimmed.match(matchedRule.pattern);
-            matchedRule.apply(formattedText.trim());
-            editor.tf.focus();
-            onContentChange?.();
-        } catch (_error) {
-            setFormatError('Auto formatting failed. Please try again.');
+            setImproveWritingPreview({
+                before: text,
+                after: improvedText,
+            });
+        } catch (error) {
+            setImproveWritingError(error.message || 'Improve Writing failed. Please try again.');
+        } finally {
+            setImproveWritingProcessing(false);
         }
     };
 
-    const applyAutoFormatMarker = (marker, range, path) => {
+    const applyImproveWritingPreview = () => {
+        if (!editor || !improveWritingPreview?.after) {
+            return;
+        }
+
+        editor.tf.setValue(deserializeHtmlToValue(plainTextToEditorHtml(improveWritingPreview.after)));
+        editor.tf.focus();
+        setImproveWritingPreview(null);
+        setImproveWritingStatus('Improved writing applied. Review it, then save the note.');
+        onContentChange?.();
+    };
+
+    const applyMarkdownShortcut = (marker, range, path) => {
         editor.tf.select(range);
         editor.tf.delete();
 
         if (marker === '#') {
             editor.tf.setNodes({ type: editor.getType('h2') }, { at: path });
-            setFormatStatus('Heading started.');
         } else if (marker === '##') {
             editor.tf.setNodes({ type: editor.getType('h3') }, { at: path });
-            setFormatStatus('Subheading started.');
         } else if (marker === '-' || marker === '*') {
             editor.getPlugin({ key: 'ul' })?.transforms?.ul?.toggle?.();
-            setFormatStatus('Bullet list started.');
         } else {
             editor.getPlugin({ key: 'ol' })?.transforms?.ol?.toggle?.();
-            setFormatStatus('Numbered list started.');
         }
 
         editor.tf.focus();
@@ -1104,9 +1169,7 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
         }
 
         event.preventDefault();
-        setFormatError('');
-        setFormatStatus('');
-        applyAutoFormatMarker(marker, range, path);
+        applyMarkdownShortcut(marker, range, path);
 
         return true;
     };
@@ -1132,12 +1195,12 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                 editor.tf.setValue(deserializeHtmlToValue(nextHtml));
                 editor.tf.focus();
             },
-            autoFormat: applyAutoFormat,
             autoCorrect: applyAutoCorrect,
+            improveWriting: requestImproveWriting,
             toggleDictation,
             stopDictation,
         }),
-        [editor, isDictating, autoCorrectProcessing],
+        [editor, isDictating, autoCorrectProcessing, improveWritingProcessing, improveWritingPreview],
     );
 
     if (!editor) {
@@ -1184,9 +1247,11 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                         onOpenOcr={onOpenOcr}
                         onRequestDictation={toggleDictation}
                         onRequestAutoCorrect={applyAutoCorrect}
+                        onRequestImproveWriting={requestImproveWriting}
                         onFormatChange={onContentChange}
                         isDictating={isDictating}
                         autoCorrectProcessing={autoCorrectProcessing}
+                        improveWritingProcessing={improveWritingProcessing}
                     />
                 ) : null}
                 {dictationError ? (
@@ -1209,14 +1274,14 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                         {autoCorrectStatus}
                     </p>
                 ) : null}
-                {formatError ? (
+                {improveWritingError ? (
                     <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                        {formatError}
+                        {improveWritingError}
                     </p>
                 ) : null}
-                {!formatError && formatStatus ? (
+                {!improveWritingError && improveWritingStatus ? (
                     <p className="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
-                        {formatStatus}
+                        {improveWritingStatus}
                     </p>
                 ) : null}
                 <PlateContent
@@ -1227,6 +1292,13 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                     onKeyDown={handleEditorKeyDown}
                 />
             </Plate>
+            <ImproveWritingPreviewModal
+                open={Boolean(improveWritingPreview)}
+                beforeText={improveWritingPreview?.before ?? ''}
+                afterText={improveWritingPreview?.after ?? ''}
+                onApply={applyImproveWritingPreview}
+                onClose={() => setImproveWritingPreview(null)}
+            />
         </div>
     );
 });

@@ -139,6 +139,16 @@ const icons = {
             <path d="M14 11v5" />
         </>
     ),
+    wand: (
+        <>
+            <path d="M15 4 20 9" />
+            <path d="M14 5 5 14a2 2 0 0 0 0 3l2 2a2 2 0 0 0 3 0l9-9" />
+            <path d="M5 4v3" />
+            <path d="M3.5 5.5h3" />
+            <path d="M19 17v3" />
+            <path d="M17.5 18.5h3" />
+        </>
+    ),
     underline: (
         <>
             <path d="M7 5v6a5 5 0 0 0 10 0V5" />
