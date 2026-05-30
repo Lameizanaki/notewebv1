@@ -41,6 +41,14 @@ services:
         value: 150
       - key: OCR_TIMEOUT
         value: 45
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_TIMEOUT
+        value: 20
 
 databases:
   - name: quicknote-db
