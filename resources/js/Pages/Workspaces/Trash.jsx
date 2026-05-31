@@ -20,11 +20,11 @@ export default function Trash({ workspace, notes, filters }) {
     return (
         <AppLayout
             title={`${workspace.name} Trash`}
-            actions={<Link href={route('workspaces.notes.index', workspace.id)} className="rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-300">Back to Notes</Link>}
+            actions={<Link href={route('workspaces.notes.index', workspace.id)} className="inline-flex h-10 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white">Back to Notes</Link>}
         >
             <Head title={`${workspace.name} Trash`} />
             <div className="space-y-6">
-                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 sm:p-6">
                     <div className="flex flex-col gap-4 xl:flex-row">
                         <SearchInput
                             value={search}
@@ -56,11 +56,11 @@ export default function Trash({ workspace, notes, filters }) {
                                 </div>
                                 {workspace.can_edit ? (
                                     <div className="flex flex-wrap gap-2">
-                                        <button type="button" onClick={() => router.patch(route('workspaces.trash.restore', [workspace.id, note.id]))} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-300">
+                                        <button type="button" onClick={() => router.patch(route('workspaces.trash.restore', [workspace.id, note.id]))} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white">
                                             <Icon name="fileText" className="h-4 w-4" />
                                             Restore
                                         </button>
-                                        <button type="button" onClick={() => router.delete(route('workspaces.trash.destroy', [workspace.id, note.id]))} className="inline-flex items-center gap-2 rounded-lg border border-rose-500/40 px-4 py-3 text-sm text-rose-200">
+                                        <button type="button" onClick={() => router.delete(route('workspaces.trash.destroy', [workspace.id, note.id]))} className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-500/40 px-4 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white">
                                             <Icon name="trash" className="h-4 w-4" />
                                             Permanently Delete
                                         </button>

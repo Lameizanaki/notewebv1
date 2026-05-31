@@ -69,7 +69,7 @@ export default function Index({ workspaces }) {
                         <button
                             type="submit"
                             disabled={form.processing}
-                            className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-60"
+                            className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-60"
                         >
                             <Icon name="plus" className="h-4 w-4" />
                             Create Workspace

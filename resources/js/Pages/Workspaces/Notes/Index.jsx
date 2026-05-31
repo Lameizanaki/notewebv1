@@ -31,14 +31,14 @@ export default function Index({ workspace, notes, tags, filters }) {
             title={workspace.name}
             actions={
                 <div className="flex flex-wrap gap-2">
-                    <Link href={route('workspaces.trash.index', workspace.id)} className="rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-300">
+                    <Link href={route('workspaces.trash.index', workspace.id)} className="inline-flex h-10 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white">
                         Trash
                     </Link>
-                    <Link href={route('workspaces.settings.edit', workspace.id)} className="rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-300">
+                    <Link href={route('workspaces.settings.edit', workspace.id)} className="inline-flex h-10 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white">
                         Members
                     </Link>
                     {workspace.can_edit ? (
-                        <Link href={route('workspaces.notes.create', workspace.id)} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950">
+                        <Link href={route('workspaces.notes.create', workspace.id)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">
                             <Icon name="plus" className="h-4 w-4" />
                             New Shared Note
                         </Link>
@@ -49,7 +49,7 @@ export default function Index({ workspace, notes, tags, filters }) {
             <Head title={workspace.name} />
 
             <div className="space-y-6">
-                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 sm:p-6">
                     <p className="mb-4 text-sm text-slate-400">
                         {workspace.description || `You have ${workspace.role} access to this shared workspace.`}
                     </p>
