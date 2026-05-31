@@ -124,6 +124,25 @@ class WorkspaceTest extends TestCase
         ]);
     }
 
+    public function test_editor_link_promotes_existing_viewer(): void
+    {
+        [, $workspace] = $this->workspaceOwnedBy();
+        $viewer = User::factory()->create();
+        $workspace->members()->attach($viewer->id, ['role' => Workspace::ROLE_VIEWER]);
+        $inviteLink = WorkspaceInviteLink::issue($workspace, Workspace::ROLE_EDITOR);
+
+        $this
+            ->actingAs($viewer)
+            ->get(route('workspace-invites.accept', $inviteLink->token))
+            ->assertRedirect(route('workspaces.notes.index', $workspace));
+
+        $this->assertDatabaseHas('workspace_user', [
+            'workspace_id' => $workspace->id,
+            'user_id' => $viewer->id,
+            'role' => Workspace::ROLE_EDITOR,
+        ]);
+    }
+
     public function test_regenerating_invite_link_invalidates_old_link(): void
     {
         [$owner, $workspace] = $this->workspaceOwnedBy();

@@ -30,10 +30,15 @@ class WorkspaceInviteLinkController extends Controller
             ->where('token_hash', hash('sha256', $token))
             ->firstOrFail();
         $workspace = $inviteLink->workspace;
+        $currentRole = $workspace->roleFor($request->user());
 
-        if (! $workspace->hasMember($request->user())) {
+        if ($currentRole === null) {
             $workspace->members()->attach($request->user()->id, [
                 'role' => $inviteLink->role,
+            ]);
+        } elseif ($currentRole === Workspace::ROLE_VIEWER && $inviteLink->role === Workspace::ROLE_EDITOR) {
+            $workspace->members()->updateExistingPivot($request->user()->id, [
+                'role' => Workspace::ROLE_EDITOR,
             ]);
         }
 
