@@ -257,9 +257,9 @@ class NoteController extends Controller
             'content' => $note->content,
             'preview' => Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($note->content ?? ''))), 140),
             'is_pinned' => $note->is_pinned,
-            'updated_at' => optional($note->updated_at)?->format('M d, Y g:i A'),
+            'updated_at' => optional($note->updated_at)?->toIso8601String(),
             'updated_at_human' => optional($note->updated_at)?->diffForHumans(),
-            'deleted_at' => optional($note->deleted_at)?->format('M d, Y g:i A'),
+            'deleted_at' => optional($note->deleted_at)?->toIso8601String(),
             'tags' => $this->transformTags($note->tags),
         ])->values()->all();
     }
@@ -271,7 +271,7 @@ class NoteController extends Controller
             'title' => $note->title,
             'content' => $note->content,
             'is_pinned' => $note->is_pinned,
-            'updated_at' => optional($note->updated_at)?->format('M d, Y g:i A'),
+            'updated_at' => optional($note->updated_at)?->toIso8601String(),
             'tags' => $this->transformTags($note->tags),
             'ocr_uploads' => $this->transformUploads($note->ocrUploads),
         ];
@@ -293,7 +293,7 @@ class NoteController extends Controller
             'file_path' => $upload->file_path,
             'file_type' => $upload->file_type,
             'extracted_text' => $upload->extracted_text,
-            'created_at' => optional($upload->created_at)?->format('M d, Y g:i A'),
+            'created_at' => optional($upload->created_at)?->toIso8601String(),
         ])->values()->all();
     }
 }

@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/settings', [ProfileController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [ProfileController::class, 'update'])->name('settings.update');
+    Route::delete('/settings/avatar', [ProfileController::class, 'destroyAvatar'])->name('settings.avatar.destroy');
     Route::delete('/settings', [ProfileController::class, 'destroy'])->name('settings.destroy');
 });
 

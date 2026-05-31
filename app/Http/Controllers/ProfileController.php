@@ -47,6 +47,18 @@ class ProfileController extends Controller
         return Redirect::route('settings.edit')->with('success', 'Profile updated successfully.');
     }
 
+    public function destroyAvatar(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+            $user->update(['avatar' => null]);
+        }
+
+        return Redirect::route('settings.edit')->with('success', 'Profile picture removed successfully.');
+    }
+
     /**
      * Delete the user's account.
      */

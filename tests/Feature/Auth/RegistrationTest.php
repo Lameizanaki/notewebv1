@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,5 +33,29 @@ class RegistrationTest extends TestCase
             'username' => 'test_user',
         ]);
         $this->assertNotNull(auth()->user()->password_set_at);
+    }
+
+    public function test_existing_google_account_receives_clear_registration_message(): void
+    {
+        User::factory()->create([
+            'email' => 'google@example.com',
+            'google_id' => 'google-123',
+            'password_set_at' => null,
+        ]);
+
+        $response = $this
+            ->from('/register')
+            ->post('/register', [
+                'name' => 'Google User',
+                'email' => 'google@example.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ]);
+
+        $response
+            ->assertRedirect('/register')
+            ->assertSessionHasErrors([
+                'email' => 'An account already exists with this email. Sign in with Google or use Forgot Password to set a password.',
+            ]);
     }
 }

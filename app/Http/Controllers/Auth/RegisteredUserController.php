@@ -39,6 +39,8 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'email.unique' => 'An account already exists with this email. Sign in with Google or use Forgot Password to set a password.',
         ]);
 
         $user = User::create([

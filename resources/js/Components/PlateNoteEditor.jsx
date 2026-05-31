@@ -38,7 +38,7 @@ const editorShellClassName =
     'min-h-[34rem] rounded-xl border border-slate-800/90 bg-slate-950/70 p-4 shadow-[0_28px_80px_rgba(2,6,23,0.45)]';
 
 const editableClassName =
-    'min-h-[26rem] rounded-lg px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6 [&_p]:my-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_li]:pl-1 [&_li]:text-slate-100 [&_ul_ol]:mt-1 [&_ul_ul]:mt-1';
+    'min-h-[26rem] rounded-lg px-4 py-4 text-[15px] leading-8 text-slate-100 outline-none [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-300/60 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-slate-300 [&_h1]:mt-7 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-7 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:tracking-[-0.02em] [&_h3]:text-white [&_ol]:my-0 [&_ol]:list-decimal [&_ol]:space-y-0 [&_ol]:pl-5 [&_p]:my-3 [&_ul]:my-0 [&_ul]:list-disc [&_ul]:space-y-0 [&_ul]:pl-5 [&_li]:pl-0 [&_li]:leading-6 [&_li]:text-slate-100 [&_ul_ol]:mt-0 [&_ul_ul]:mt-0';
 
 const emptyValue = [{ type: 'p', children: [{ text: '' }] }];
 
@@ -318,7 +318,7 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="ul"
-                    className="my-2 list-disc space-y-1 pl-6 marker:text-emerald-300"
+                    className="my-0 list-disc space-y-0 pl-5 marker:text-emerald-300"
                 />
             );
         case 'ol':
@@ -326,11 +326,11 @@ function renderElement(props) {
                 <PlateElement
                     {...props}
                     as="ol"
-                    className="my-2 list-decimal space-y-1 pl-6 marker:text-emerald-300"
+                    className="my-0 list-decimal space-y-0 pl-5 marker:text-emerald-300"
                 />
             );
         case 'li':
-            return <PlateElement {...props} as="li" style={alignStyle} className={`pl-1 text-slate-100 ${alignClass}`} />;
+            return <PlateElement {...props} as="li" style={alignStyle} className={`pl-0 leading-6 text-slate-100 ${alignClass}`} />;
         case 'lic':
             return <PlateElement {...props} as="div" style={alignStyle} className={`min-w-0 ${alignClass}`} />;
         case 'taskList':

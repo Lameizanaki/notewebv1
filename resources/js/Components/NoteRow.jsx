@@ -1,19 +1,35 @@
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import Icon from '@/Components/Icon';
 import TagPill from '@/Components/TagPill';
+import { formatLocalDateTime } from '@/lib/dateTime';
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function NoteRow({ note }) {
     const [showDelete, setShowDelete] = useState(false);
+    const openNote = () => router.visit(route('notes.edit', note.id));
 
     return (
         <>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
+            <div
+                role="link"
+                tabIndex={0}
+                onClick={openNote}
+                onKeyDown={(event) => {
+                    if (event.currentTarget === event.target && event.key === 'Enter') {
+                        openNote();
+                    }
+                }}
+                className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30 transition hover:border-slate-700"
+            >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
-                            <Link href={route('notes.edit', note.id)} className="text-lg font-semibold text-white transition hover:text-emerald-300">
+                            <Link
+                                href={route('notes.edit', note.id)}
+                                onClick={(event) => event.stopPropagation()}
+                                className="text-lg font-semibold text-white transition hover:text-emerald-300"
+                            >
                                 {note.title}
                             </Link>
                             {note.is_pinned ? (
@@ -31,7 +47,7 @@ export default function NoteRow({ note }) {
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-wrap gap-1.5 lg:w-52 lg:justify-end">
+                    <div className="flex shrink-0 flex-wrap gap-1.5 lg:w-52 lg:justify-end" onClick={(event) => event.stopPropagation()}>
                         <button
                             type="button"
                             onClick={() => router.patch(route('notes.pin', note.id), {}, { preserveScroll: true })}
@@ -51,7 +67,7 @@ export default function NoteRow({ note }) {
                     </div>
                 </div>
 
-                <div className="mt-4 text-xs text-slate-500">Last edited {note.updated_at}</div>
+                <div className="mt-4 text-xs text-slate-500">Last edited {formatLocalDateTime(note.updated_at)}</div>
             </div>
 
             <ConfirmDialog

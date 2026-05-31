@@ -1,21 +1,61 @@
 import TagPill from '@/Components/TagPill';
 import Icon from '@/Components/Icon';
+import SearchInput from '@/Components/SearchInput';
+import SortDropdown from '@/Components/SortDropdown';
 import AppLayout from '@/Layouts/AppLayout';
+import { formatLocalDateTime } from '@/lib/dateTime';
 import { Head, router } from '@inertiajs/react';
+import { useState } from 'react';
 
-export default function Trash({ notes }) {
+export default function Trash({ notes, filters }) {
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [sort, setSort] = useState(filters.sort ?? 'newest');
+
+    const applyFilters = (next = {}) => {
+        router.get(
+            route('trash.index'),
+            {
+                search: next.search ?? search,
+                sort: next.sort ?? sort,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
+
     return (
         <AppLayout title="Trash">
             <Head title="Trash" />
 
-            <div className="space-y-4">
+            <div className="space-y-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
+                    <div className="flex flex-col gap-4 xl:flex-row">
+                        <SearchInput
+                            value={search}
+                            onChange={setSearch}
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                applyFilters({ search });
+                            }}
+                            placeholder="Search deleted notes by title..."
+                        />
+                        <SortDropdown
+                            value={sort}
+                            onChange={(value) => {
+                                setSort(value);
+                                applyFilters({ sort: value });
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
                 {notes.length ? (
                     notes.map((note) => (
                         <div key={note.id} className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-white">{note.title}</h2>
-                                    <p className="mt-2 text-sm text-slate-400">Deleted on {note.deleted_at}</p>
+                                    <p className="mt-2 text-sm text-slate-400">Deleted on {formatLocalDateTime(note.deleted_at)}</p>
                                     <p className="mt-1 text-sm text-slate-500">
                                         {note.days_remaining} day{note.days_remaining === 1 ? '' : 's'} remaining before permanent deletion
                                     </p>
@@ -53,6 +93,7 @@ export default function Trash({ notes }) {
                         <p className="mt-3 text-sm text-slate-400">Deleted notes will appear here until they are restored or permanently removed.</p>
                     </div>
                 )}
+                </div>
             </div>
         </AppLayout>
     );

@@ -12,11 +12,21 @@ class TrashController extends Controller
 {
     public function index(Request $request): Response
     {
-        $notes = $request->user()
+        $search = trim((string) $request->input('search', ''));
+        $sort = $request->input('sort') === 'oldest' ? 'oldest' : 'newest';
+
+        $notesQuery = $request->user()
             ->notes()
             ->onlyTrashed()
-            ->with('tags')
-            ->latest('deleted_at')
+            ->with('tags');
+
+        if ($search !== '') {
+            $notesQuery->where('title', 'like', "%{$search}%");
+        }
+
+        $notes = ($sort === 'oldest'
+            ? $notesQuery->oldest('deleted_at')
+            : $notesQuery->latest('deleted_at'))
             ->get()
             ->map(function (Note $note) {
                 $daysRemaining = $note->permanently_delete_at
@@ -26,9 +36,9 @@ class TrashController extends Controller
                 return [
                     'id' => $note->id,
                     'title' => $note->title,
-                    'deleted_at' => optional($note->deleted_at)?->format('M d, Y g:i A'),
+                    'deleted_at' => optional($note->deleted_at)?->toIso8601String(),
                     'days_remaining' => $daysRemaining,
-                    'permanently_delete_at' => optional($note->permanently_delete_at)?->format('M d, Y g:i A'),
+                    'permanently_delete_at' => optional($note->permanently_delete_at)?->toIso8601String(),
                     'tags' => $note->tags->map(fn ($tag) => [
                         'id' => $tag->id,
                         'name' => $tag->name,
@@ -39,6 +49,10 @@ class TrashController extends Controller
             ->all();
 
         return Inertia::render('Trash', [
+            'filters' => [
+                'search' => $search,
+                'sort' => $sort,
+            ],
             'notes' => $notes,
         ]);
     }

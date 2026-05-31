@@ -3,7 +3,7 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 
 export default function UpdateProfileInformationForm({
     mustVerifyEmail,
@@ -55,6 +55,15 @@ export default function UpdateProfileInformationForm({
                             className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
                         />
                         <InputError className="mt-2" message={errors.avatar} />
+                        {user.avatar_url ? (
+                            <button
+                                type="button"
+                                onClick={() => router.delete(route('settings.avatar.destroy'), { preserveScroll: true })}
+                                className="mt-3 text-sm text-rose-300 transition hover:text-rose-200"
+                            >
+                                Remove profile picture
+                            </button>
+                        ) : null}
                     </div>
                 </div>
 

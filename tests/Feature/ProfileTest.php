@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -64,6 +65,27 @@ class ProfileTest extends TestCase
 
         $this->assertSame($originalEmail, $user->email);
         $this->assertNotNull($user->email_verified_at);
+    }
+
+    public function test_user_can_remove_profile_picture(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/avatar.jpg', 'avatar');
+
+        $user = User::factory()->create([
+            'avatar' => 'avatars/avatar.jpg',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->delete('/settings/avatar');
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/settings');
+
+        $this->assertNull($user->refresh()->avatar);
+        Storage::disk('public')->assertMissing('avatars/avatar.jpg');
     }
 
     public function test_user_can_delete_their_account(): void

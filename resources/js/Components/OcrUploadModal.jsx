@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import Icon from '@/Components/Icon';
+import { formatLocalDateTime } from '@/lib/dateTime';
 
 export default function OcrUploadModal({ open, onClose, noteId = null, uploads = [], onInsertText }) {
     const form = useForm({
@@ -106,7 +107,7 @@ export default function OcrUploadModal({ open, onClose, noteId = null, uploads =
                                 <p className="mt-3 text-sm font-medium text-white">
                                     {latestUpload.file_type.toUpperCase()} upload
                                 </p>
-                                <p className="mt-1 text-xs text-slate-500">{latestUpload.created_at}</p>
+                                <p className="mt-1 text-xs text-slate-500">{formatLocalDateTime(latestUpload.created_at)}</p>
                                 <p className="mt-3 text-sm leading-6 text-slate-400">
                                     {latestUpload.extracted_text || 'No readable text was detected in this upload.'}
                                 </p>

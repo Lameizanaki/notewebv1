@@ -81,6 +81,7 @@ export default function DeleteUserForm({ hasPassword = true, className = '' }) {
                                 id="password"
                                 type="password"
                                 name="password"
+                                autoComplete="current-password"
                                 ref={passwordInput}
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}

@@ -1,24 +1,40 @@
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import Icon from '@/Components/Icon';
 import TagPill from '@/Components/TagPill';
+import { formatLocalDateTime } from '@/lib/dateTime';
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function NoteCard({ note }) {
     const [showDelete, setShowDelete] = useState(false);
+    const openNote = () => router.visit(route('notes.edit', note.id));
 
     return (
         <>
-            <article className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
+            <article
+                role="link"
+                tabIndex={0}
+                onClick={openNote}
+                onKeyDown={(event) => {
+                    if (event.currentTarget === event.target && event.key === 'Enter') {
+                        openNote();
+                    }
+                }}
+                className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30 transition hover:border-slate-700"
+            >
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                        <Link href={route('notes.edit', note.id)} className="text-lg font-semibold text-white transition hover:text-emerald-300">
+                        <Link
+                            href={route('notes.edit', note.id)}
+                            onClick={(event) => event.stopPropagation()}
+                            className="text-lg font-semibold text-white transition hover:text-emerald-300"
+                        >
                             {note.title}
                         </Link>
                         <p className="mt-2 text-sm leading-6 text-slate-400">{note.preview || 'No content yet.'}</p>
                     </div>
 
-                    <div className="flex shrink-0 gap-1.5">
+                    <div className="flex shrink-0 gap-1.5" onClick={(event) => event.stopPropagation()}>
                         <button
                             type="button"
                             onClick={() => router.patch(route('notes.pin', note.id), {}, { preserveScroll: true })}
@@ -45,7 +61,7 @@ export default function NoteCard({ note }) {
                 </div>
 
                 <div className="mt-5 text-xs text-slate-500">
-                    <span>Last edited {note.updated_at}</span>
+                    <span>Last edited {formatLocalDateTime(note.updated_at)}</span>
                 </div>
             </article>
 
