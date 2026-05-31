@@ -24,7 +24,9 @@ class UpdateTagRequest extends FormRequest
                 'string',
                 'max:50',
                 Rule::unique('tags', 'name')
-                    ->where(fn ($query) => $query->where('user_id', $this->user()->id))
+                    ->where(fn ($query) => $query
+                        ->where('user_id', $this->user()->id)
+                        ->whereNull('workspace_id'))
                     ->ignore($tagId),
             ],
         ];

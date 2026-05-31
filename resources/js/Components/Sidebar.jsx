@@ -11,7 +11,7 @@ const links = [
 
 export default function Sidebar({ user, className = '', onClose = null, showMobileClose = false }) {
     const page = usePage();
-    const { app } = page.props;
+    const { app, workspaces = [] } = page.props;
     const currentUrl = page.url ?? '';
 
     return (
@@ -67,6 +67,52 @@ export default function Sidebar({ user, className = '', onClose = null, showMobi
                     );
                 })}
             </nav>
+
+            <div className="mt-7 border-t border-slate-800 pt-5">
+                <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Workspaces</p>
+                    <Link href={route('workspaces.index')} className="text-xs text-emerald-300 transition hover:text-emerald-200">
+                        Manage
+                    </Link>
+                </div>
+
+                <div className="mt-3 space-y-1">
+                    {workspaces.length ? (
+                        workspaces.map((workspace) => {
+                            const href = route('workspaces.notes.index', workspace.id);
+                            const pathname = new URL(href, 'http://quicknote.test').pathname;
+                            const active = currentUrl === pathname || currentUrl.startsWith(`${pathname}/`) || currentUrl.startsWith(`${pathname}?`);
+
+                            return (
+                                <Link
+                                    key={workspace.id}
+                                    href={href}
+                                    onClick={onClose ?? undefined}
+                                    className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition ${
+                                        active ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/70 hover:text-white'
+                                    }`}
+                                >
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-400/10 text-xs font-semibold text-emerald-300">
+                                        {workspace.name.slice(0, 1).toUpperCase()}
+                                    </span>
+                                    <span className="truncate">{workspace.name}</span>
+                                </Link>
+                            );
+                        })
+                    ) : (
+                        <p className="px-3 py-2 text-xs text-slate-500">No shared workspaces yet.</p>
+                    )}
+                </div>
+
+                <Link
+                    href={route('workspaces.index')}
+                    onClick={onClose ?? undefined}
+                    className="mt-3 inline-flex items-center gap-2 px-3 text-xs font-medium text-emerald-300 transition hover:text-emerald-200"
+                >
+                    <Icon name="plus" className="h-3.5 w-3.5" />
+                    New Workspace
+                </Link>
+            </div>
 
             <div className="mt-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                 <div className="flex items-center gap-3">

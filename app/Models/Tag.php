@@ -15,6 +15,7 @@ class Tag extends Model
      */
     protected $fillable = [
         'user_id',
+        'workspace_id',
         'name',
     ];
 
@@ -26,5 +27,10 @@ class Tag extends Model
     public function notes(): BelongsToMany
     {
         return $this->belongsToMany(Note::class)->withTimestamps();
+    }
+
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
     }
 }

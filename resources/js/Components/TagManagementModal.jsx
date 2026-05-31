@@ -2,7 +2,7 @@ import { router, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import Icon from '@/Components/Icon';
 
-export default function TagManagementModal({ open, onClose, tags = [] }) {
+export default function TagManagementModal({ open, onClose, tags = [], routes = {} }) {
     const createForm = useForm({ name: '' });
     const [drafts, setDrafts] = useState({});
 
@@ -21,7 +21,7 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
 
     const renameTag = (tagId) => {
         router.patch(
-            route('tags.update', tagId),
+            routes.update?.(tagId) ?? route('tags.update', tagId),
             { name: tagDrafts[tagId] },
             { preserveScroll: true },
         );
@@ -48,7 +48,7 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
                 <form
                     onSubmit={(event) => {
                         event.preventDefault();
-                        createForm.post(route('tags.store'), {
+                        createForm.post(routes.store ?? route('tags.store'), {
                             preserveScroll: true,
                             onSuccess: () => createForm.reset('name'),
                         });
@@ -101,7 +101,7 @@ export default function TagManagementModal({ open, onClose, tags = [] }) {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => router.delete(route('tags.destroy', tag.id), { preserveScroll: true })}
+                                        onClick={() => router.delete(routes.destroy?.(tag.id) ?? route('tags.destroy', tag.id), { preserveScroll: true })}
                                         className="rounded-lg border border-rose-500/40 px-4 py-3 text-sm text-rose-200 transition hover:border-rose-400 hover:text-white"
                                     >
                                         Delete

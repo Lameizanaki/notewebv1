@@ -19,6 +19,8 @@ export default function NoteEditor({
     autoSaveStatus = '',
     onContentChange = null,
     editorRef: externalEditorRef = null,
+    routes = {},
+    showEditAction = true,
 }) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showOcrModal, setShowOcrModal] = useState(false);
@@ -28,6 +30,8 @@ export default function NoteEditor({
     const editorRef = externalEditorRef ?? internalEditorRef;
 
     const selectedTagIds = form.data.tag_ids ?? [];
+    const editUrl = note ? (routes.edit?.(note.id) ?? route('notes.edit', note.id)) : null;
+    const destroyUrl = note ? (routes.destroy?.(note.id) ?? route('notes.destroy', note.id)) : null;
 
     const toggleTag = (tagId) => {
         const next = selectedTagIds.includes(tagId)
@@ -78,9 +82,9 @@ export default function NoteEditor({
                             />
 
                             <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:flex-nowrap xl:justify-end">
-                            {readOnly && note ? (
+                            {readOnly && note && showEditAction ? (
                                 <Link
-                                    href={route('notes.edit', note.id)}
+                                    href={editUrl}
                                     className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
                                 >
                                     <Icon name="fileText" className="h-4 w-4" />
@@ -174,13 +178,14 @@ export default function NoteEditor({
                 onClose={() => setShowOcrModal(false)}
                 noteId={note?.id ?? null}
                 uploads={ocrUploads}
+                storeUrl={routes.ocrStore ?? route('ocr-uploads.store')}
                 onInsertText={(value) => {
                     editorRef.current?.appendText(value);
                     setShowOcrModal(false);
                 }}
             />
 
-            <TagManagementModal open={showTagManager} onClose={() => setShowTagManager(false)} tags={tags} />
+            <TagManagementModal open={showTagManager} onClose={() => setShowTagManager(false)} tags={tags} routes={routes.tags} />
 
             <ConfirmDialog
                 open={showDeleteDialog}
@@ -188,7 +193,7 @@ export default function NoteEditor({
                 message="This note will stay in trash for 30 days before permanent deletion."
                 confirmLabel="Move to Trash"
                 onClose={() => setShowDeleteDialog(false)}
-                onConfirm={() => router.delete(route('notes.destroy', note.id))}
+                onConfirm={() => router.delete(destroyUrl)}
             />
         </>
     );

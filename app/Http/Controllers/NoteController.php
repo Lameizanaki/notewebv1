@@ -19,7 +19,7 @@ class NoteController extends Controller
     public function dashboard(Request $request): Response
     {
         $search = trim((string) $request->input('search', ''));
-        $baseQuery = $request->user()->notes()->with('tags');
+        $baseQuery = $request->user()->notes()->whereNull('workspace_id')->with('tags');
 
         if ($search !== '') {
             $baseQuery->where('title', 'like', "%{$search}%");
@@ -49,7 +49,7 @@ class NoteController extends Controller
     {
         [$search, $tagId, $sort] = $this->resolveFilters($request);
 
-        $notes = $this->applyListFilters($request->user()->notes()->with('tags'), $search, $tagId, $sort)->get();
+        $notes = $this->applyListFilters($request->user()->notes()->whereNull('workspace_id')->with('tags'), $search, $tagId, $sort)->get();
 
         return Inertia::render('Notes/Index', [
             'filters' => [
@@ -58,14 +58,14 @@ class NoteController extends Controller
                 'sort' => $sort,
             ],
             'notes' => $this->transformNotes($notes),
-            'tags' => $this->transformTags($request->user()->tags()->orderBy('name')->get()),
+            'tags' => $this->transformTags($request->user()->tags()->whereNull('workspace_id')->orderBy('name')->get()),
         ]);
     }
 
     public function create(Request $request): Response
     {
         return Inertia::render('Notes/Create', [
-            'tags' => $this->transformTags($request->user()->tags()->orderBy('name')->get()),
+            'tags' => $this->transformTags($request->user()->tags()->whereNull('workspace_id')->orderBy('name')->get()),
             'ocrUploads' => $this->transformUploads(
                 $request->user()->ocrUploads()->latest()->limit(1)->get()
             ),
@@ -95,7 +95,7 @@ class NoteController extends Controller
 
         return Inertia::render('Notes/Show', [
             'note' => $this->transformSingleNote($note),
-            'tags' => $this->transformTags($request->user()->tags()->orderBy('name')->get()),
+            'tags' => $this->transformTags($request->user()->tags()->whereNull('workspace_id')->orderBy('name')->get()),
             'ocrUploads' => $this->transformUploads(
                 $request->user()->ocrUploads()->latest()->limit(1)->get()
             ),
@@ -108,7 +108,7 @@ class NoteController extends Controller
 
         return Inertia::render('Notes/Edit', [
             'note' => $this->transformSingleNote($note),
-            'tags' => $this->transformTags($request->user()->tags()->orderBy('name')->get()),
+            'tags' => $this->transformTags($request->user()->tags()->whereNull('workspace_id')->orderBy('name')->get()),
             'ocrUploads' => $this->transformUploads(
                 $request->user()->ocrUploads()->latest()->limit(1)->get()
             ),
@@ -157,7 +157,7 @@ class NoteController extends Controller
         [$search, $tagId, $sort] = $this->resolveFilters($request);
 
         $notes = $this->applyListFilters(
-            $request->user()->notes()->with('tags')->where('is_pinned', true),
+            $request->user()->notes()->whereNull('workspace_id')->with('tags')->where('is_pinned', true),
             $search,
             $tagId,
             $sort,
@@ -170,7 +170,7 @@ class NoteController extends Controller
                 'sort' => $sort,
             ],
             'notes' => $this->transformNotes($notes),
-            'tags' => $this->transformTags($request->user()->tags()->orderBy('name')->get()),
+            'tags' => $this->transformTags($request->user()->tags()->whereNull('workspace_id')->orderBy('name')->get()),
         ]);
     }
 
@@ -205,7 +205,7 @@ class NoteController extends Controller
     public function detachTag(Request $request, Note $note, Tag $tag): RedirectResponse
     {
         $note = $this->ownedNote($request, $note->id);
-        $tag = $request->user()->tags()->findOrFail($tag->id);
+        $tag = $request->user()->tags()->whereNull('workspace_id')->findOrFail($tag->id);
 
         $note->tags()->detach($tag->id);
 
@@ -216,6 +216,7 @@ class NoteController extends Controller
     {
         return $request->user()
             ->notes()
+            ->whereNull('workspace_id')
             ->with(['tags', 'ocrUploads'])
             ->findOrFail($noteId);
     }
@@ -228,7 +229,7 @@ class NoteController extends Controller
 
         if ($request->filled('tag')) {
             $candidate = (int) $request->input('tag');
-            $tagId = $request->user()->tags()->whereKey($candidate)->exists() ? $candidate : null;
+            $tagId = $request->user()->tags()->whereNull('workspace_id')->whereKey($candidate)->exists() ? $candidate : null;
         }
 
         return [$search, $tagId, $sort];

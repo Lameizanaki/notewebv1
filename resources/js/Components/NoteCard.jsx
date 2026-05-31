@@ -5,9 +5,12 @@ import { formatLocalDateTime } from '@/lib/dateTime';
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function NoteCard({ note }) {
+export default function NoteCard({ note, routes = {}, allowActions = true }) {
     const [showDelete, setShowDelete] = useState(false);
-    const openNote = () => router.visit(route('notes.edit', note.id));
+    const editUrl = routes.edit?.(note.id) ?? route('notes.edit', note.id);
+    const pinUrl = routes.pin?.(note.id) ?? route('notes.pin', note.id);
+    const destroyUrl = routes.destroy?.(note.id) ?? route('notes.destroy', note.id);
+    const openNote = () => router.visit(editUrl);
 
     return (
         <>
@@ -25,7 +28,7 @@ export default function NoteCard({ note }) {
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                         <Link
-                            href={route('notes.edit', note.id)}
+                            href={editUrl}
                             onClick={(event) => event.stopPropagation()}
                             className="text-lg font-semibold text-white transition hover:text-emerald-300"
                         >
@@ -34,10 +37,10 @@ export default function NoteCard({ note }) {
                         <p className="mt-2 text-sm leading-6 text-slate-400">{note.preview || 'No content yet.'}</p>
                     </div>
 
-                    <div className="flex shrink-0 gap-1.5" onClick={(event) => event.stopPropagation()}>
+                    {allowActions ? <div className="flex shrink-0 gap-1.5" onClick={(event) => event.stopPropagation()}>
                         <button
                             type="button"
-                            onClick={() => router.patch(route('notes.pin', note.id), {}, { preserveScroll: true })}
+                            onClick={() => router.patch(pinUrl, {}, { preserveScroll: true })}
                             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
                         >
                             <Icon name="pin" className="h-3.5 w-3.5" />
@@ -51,7 +54,7 @@ export default function NoteCard({ note }) {
                             <Icon name="trash" className="h-3.5 w-3.5" />
                             Delete
                         </button>
-                    </div>
+                    </div> : null}
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -71,7 +74,7 @@ export default function NoteCard({ note }) {
                 message="This note will stay in trash for 30 days before permanent deletion."
                 confirmLabel="Move to Trash"
                 onClose={() => setShowDelete(false)}
-                onConfirm={() => router.delete(route('notes.destroy', note.id))}
+                onConfirm={() => router.delete(destroyUrl)}
             />
         </>
     );

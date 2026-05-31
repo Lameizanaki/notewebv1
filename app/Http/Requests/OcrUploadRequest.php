@@ -22,6 +22,7 @@ class OcrUploadRequest extends FormRequest
                 Rule::exists('notes', 'id')->where(
                     fn ($query) => $query
                         ->where('user_id', $this->user()->id)
+                        ->whereNull('workspace_id')
                         ->whereNull('deleted_at')
                 ),
             ],

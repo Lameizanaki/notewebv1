@@ -17,6 +17,7 @@ class TrashController extends Controller
 
         $notesQuery = $request->user()
             ->notes()
+            ->whereNull('workspace_id')
             ->onlyTrashed()
             ->with('tags');
 
@@ -78,6 +79,7 @@ class TrashController extends Controller
     {
         return $request->user()
             ->notes()
+            ->whereNull('workspace_id')
             ->withTrashed()
             ->whereNotNull('deleted_at')
             ->findOrFail($noteId);

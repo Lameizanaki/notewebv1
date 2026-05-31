@@ -30,7 +30,9 @@ class StoreNoteRequest extends FormRequest
             'tag_ids.*' => [
                 'integer',
                 Rule::exists('tags', 'id')->where(
-                    fn ($query) => $query->where('user_id', $this->user()->id)
+                    fn ($query) => $query
+                        ->where('user_id', $this->user()->id)
+                        ->whereNull('workspace_id')
                 ),
             ],
         ];

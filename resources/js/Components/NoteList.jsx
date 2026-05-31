@@ -7,6 +7,9 @@ export default function NoteList({
     variant = 'row',
     emptyTitle = 'No notes yet',
     emptyDescription = 'Create your first note to get started.',
+    routes = {},
+    createHref = route('notes.create'),
+    allowActions = true,
 }) {
     if (!notes.length) {
         return (
@@ -14,7 +17,7 @@ export default function NoteList({
                 title={emptyTitle}
                 description={emptyDescription}
                 actionLabel="Create your first note"
-                actionHref={route('notes.create')}
+                actionHref={createHref}
             />
         );
     }
@@ -23,7 +26,7 @@ export default function NoteList({
         return (
             <div className="grid gap-4 md:grid-cols-2">
                 {notes.map((note) => (
-                    <NoteCard key={note.id} note={note} />
+                    <NoteCard key={note.id} note={note} routes={routes} allowActions={allowActions} />
                 ))}
             </div>
         );
@@ -32,7 +35,7 @@ export default function NoteList({
     return (
         <div className="space-y-4">
             {notes.map((note) => (
-                <NoteRow key={note.id} note={note} />
+                <NoteRow key={note.id} note={note} routes={routes} allowActions={allowActions} />
             ))}
         </div>
     );

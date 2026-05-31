@@ -7,6 +7,12 @@ use App\Http\Controllers\OcrController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\WorkspaceMemberController;
+use App\Http\Controllers\WorkspaceNoteController;
+use App\Http\Controllers\WorkspaceOcrController;
+use App\Http\Controllers\WorkspaceTagController;
+use App\Http\Controllers\WorkspaceTrashController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -49,6 +55,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/settings', [ProfileController::class, 'update'])->name('settings.update');
     Route::delete('/settings/avatar', [ProfileController::class, 'destroyAvatar'])->name('settings.avatar.destroy');
     Route::delete('/settings', [ProfileController::class, 'destroy'])->name('settings.destroy');
+
+    Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+    Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
+    Route::get('/workspaces/{workspace}/settings', [WorkspaceController::class, 'edit'])->name('workspaces.settings.edit');
+    Route::patch('/workspaces/{workspace}', [WorkspaceController::class, 'update'])->name('workspaces.update');
+    Route::delete('/workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
+
+    Route::post('/workspaces/{workspace}/members', [WorkspaceMemberController::class, 'store'])->name('workspaces.members.store');
+    Route::patch('/workspaces/{workspace}/members/{user}', [WorkspaceMemberController::class, 'update'])->name('workspaces.members.update');
+    Route::delete('/workspaces/{workspace}/members/{user}', [WorkspaceMemberController::class, 'destroy'])->name('workspaces.members.destroy');
+
+    Route::get('/workspaces/{workspace}/notes', [WorkspaceNoteController::class, 'index'])->name('workspaces.notes.index');
+    Route::get('/workspaces/{workspace}/notes/create', [WorkspaceNoteController::class, 'create'])->name('workspaces.notes.create');
+    Route::post('/workspaces/{workspace}/notes', [WorkspaceNoteController::class, 'store'])->name('workspaces.notes.store');
+    Route::get('/workspaces/{workspace}/notes/{note}', [WorkspaceNoteController::class, 'show'])->name('workspaces.notes.show');
+    Route::get('/workspaces/{workspace}/notes/{note}/edit', [WorkspaceNoteController::class, 'edit'])->name('workspaces.notes.edit');
+    Route::patch('/workspaces/{workspace}/notes/{note}', [WorkspaceNoteController::class, 'update'])->name('workspaces.notes.update');
+    Route::delete('/workspaces/{workspace}/notes/{note}', [WorkspaceNoteController::class, 'destroy'])->name('workspaces.notes.destroy');
+    Route::patch('/workspaces/{workspace}/notes/{note}/pin', [WorkspaceNoteController::class, 'togglePin'])->name('workspaces.notes.pin');
+
+    Route::post('/workspaces/{workspace}/tags', [WorkspaceTagController::class, 'store'])->name('workspaces.tags.store');
+    Route::patch('/workspaces/{workspace}/tags/{tag}', [WorkspaceTagController::class, 'update'])->name('workspaces.tags.update');
+    Route::delete('/workspaces/{workspace}/tags/{tag}', [WorkspaceTagController::class, 'destroy'])->name('workspaces.tags.destroy');
+    Route::post('/workspaces/{workspace}/ocr-uploads', [WorkspaceOcrController::class, 'store'])->name('workspaces.ocr-uploads.store');
+
+    Route::get('/workspaces/{workspace}/trash', [WorkspaceTrashController::class, 'index'])->name('workspaces.trash.index');
+    Route::patch('/workspaces/{workspace}/trash/{note}/restore', [WorkspaceTrashController::class, 'restore'])->name('workspaces.trash.restore');
+    Route::delete('/workspaces/{workspace}/trash/{note}', [WorkspaceTrashController::class, 'destroy'])->name('workspaces.trash.destroy');
 });
 
 require __DIR__.'/auth.php';

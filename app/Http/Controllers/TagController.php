@@ -12,14 +12,17 @@ class TagController extends Controller
 {
     public function store(StoreTagRequest $request): RedirectResponse
     {
-        $request->user()->tags()->create($request->validated());
+        $request->user()->tags()->create([
+            ...$request->validated(),
+            'workspace_id' => null,
+        ]);
 
         return back()->with('success', 'Tag created successfully.');
     }
 
     public function update(UpdateTagRequest $request, Tag $tag): RedirectResponse
     {
-        $tag = $request->user()->tags()->findOrFail($tag->id);
+        $tag = $request->user()->tags()->whereNull('workspace_id')->findOrFail($tag->id);
         $tag->update($request->validated());
 
         return back()->with('success', 'Tag renamed successfully.');
@@ -27,7 +30,7 @@ class TagController extends Controller
 
     public function destroy(Request $request, Tag $tag): RedirectResponse
     {
-        $tag = $request->user()->tags()->findOrFail($tag->id);
+        $tag = $request->user()->tags()->whereNull('workspace_id')->findOrFail($tag->id);
         $tag->notes()->detach();
         $tag->delete();
 

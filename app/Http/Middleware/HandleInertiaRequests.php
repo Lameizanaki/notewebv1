@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -34,6 +35,19 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'workspaces' => fn () => $request->user()
+                ? $request->user()
+                    ->workspaces()
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (Workspace $workspace) => [
+                        'id' => $workspace->id,
+                        'name' => $workspace->name,
+                        'role' => $workspace->pivot->role,
+                    ])
+                    ->values()
+                    ->all()
+                : [],
             'app' => [
                 'name' => config('app.name'),
                 'tagline' => 'Smart notes, made simple.',

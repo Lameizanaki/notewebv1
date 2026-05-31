@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Icon from '@/Components/Icon';
 import { formatLocalDateTime } from '@/lib/dateTime';
 
-export default function OcrUploadModal({ open, onClose, noteId = null, uploads = [], onInsertText }) {
+export default function OcrUploadModal({ open, onClose, noteId = null, uploads = [], onInsertText, storeUrl = route('ocr-uploads.store') }) {
     const form = useForm({
         note_id: noteId ?? '',
         file: null,
@@ -64,7 +64,7 @@ export default function OcrUploadModal({ open, onClose, noteId = null, uploads =
                 <form
                     onSubmit={(event) => {
                         event.preventDefault();
-                        form.post(route('ocr-uploads.store'), {
+                        form.post(storeUrl, {
                             preserveScroll: true,
                             forceFormData: true,
                             onStart: () => setUploadError(''),
