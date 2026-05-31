@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workspace;
+use App\Models\WorkspaceInviteLink;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,8 @@ class WorkspaceController extends Controller
         $workspace = DB::transaction(function () use ($request, $validated) {
             $workspace = $request->user()->ownedWorkspaces()->create($validated);
             $workspace->members()->attach($request->user()->id, ['role' => Workspace::ROLE_OWNER]);
+            WorkspaceInviteLink::issue($workspace, Workspace::ROLE_EDITOR);
+            WorkspaceInviteLink::issue($workspace, Workspace::ROLE_VIEWER);
 
             return $workspace;
         });
@@ -62,6 +65,9 @@ class WorkspaceController extends Controller
                 ])
                 ->values()
                 ->all(),
+            'inviteLinks' => $workspace->isOwner($request->user())
+                ? $this->inviteLinksFor($workspace)
+                : [],
         ]);
     }
 
@@ -112,5 +118,20 @@ class WorkspaceController extends Controller
     private function ensureOwner(Request $request, Workspace $workspace): void
     {
         abort_unless($workspace->isOwner($request->user()), 403);
+    }
+
+    private function inviteLinksFor(Workspace $workspace): array
+    {
+        return collect([Workspace::ROLE_VIEWER, Workspace::ROLE_EDITOR])
+            ->map(function (string $role) use ($workspace) {
+                $inviteLink = $workspace->inviteLinks()->where('role', $role)->first()
+                    ?? WorkspaceInviteLink::issue($workspace, $role);
+
+                return [
+                    'role' => $role,
+                    'url' => $inviteLink->url(),
+                ];
+            })
+            ->all();
     }
 }

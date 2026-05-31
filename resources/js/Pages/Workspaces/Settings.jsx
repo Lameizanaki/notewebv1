@@ -1,12 +1,20 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
-export default function Settings({ workspace, members }) {
+export default function Settings({ workspace, members, inviteLinks }) {
     const workspaceForm = useForm({
         name: workspace.name ?? '',
         description: workspace.description ?? '',
     });
     const memberForm = useForm({ email: '', role: 'viewer' });
+    const [copiedRole, setCopiedRole] = useState(null);
+
+    const copyInviteLink = async (inviteLink) => {
+        await navigator.clipboard.writeText(inviteLink.url);
+        setCopiedRole(inviteLink.role);
+        window.setTimeout(() => setCopiedRole(null), 2000);
+    };
 
     return (
         <AppLayout
@@ -51,39 +59,76 @@ export default function Settings({ workspace, members }) {
 
                 <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
                     <h2 className="text-lg font-semibold text-white">Members</h2>
-                    <p className="mt-2 text-sm text-slate-400">Invite existing QuickNote users and assign view or edit access.</p>
+                    <p className="mt-2 text-sm text-slate-400">Add members using their QuickNote account email or share a role-specific invitation link.</p>
 
                     {workspace.is_owner ? (
-                        <form
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                memberForm.post(route('workspaces.members.store', workspace.id), {
-                                    preserveScroll: true,
-                                    onSuccess: () => memberForm.reset('email'),
-                                });
-                            }}
-                            className="mt-5 flex flex-col gap-3 md:flex-row"
-                        >
-                            <input
-                                type="email"
-                                value={memberForm.data.email}
-                                onChange={(event) => memberForm.setData('email', event.target.value)}
-                                placeholder="Member email"
-                                className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none"
-                                required
-                            />
-                            <select
-                                value={memberForm.data.role}
-                                onChange={(event) => memberForm.setData('role', event.target.value)}
-                                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm text-white"
-                            >
-                                <option value="viewer">Viewer</option>
-                                <option value="editor">Editor</option>
-                            </select>
-                            <button type="submit" className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950">Add Member</button>
-                        </form>
+                        <>
+                            <div className="mt-5 rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+                                <h3 className="text-sm font-semibold text-white">Invite by email</h3>
+                                <p className="mt-1 text-xs text-slate-400">The email must already belong to a QuickNote account. Google and password accounts are both supported.</p>
+                                <form
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        memberForm.post(route('workspaces.members.store', workspace.id), {
+                                            preserveScroll: true,
+                                            onSuccess: () => memberForm.reset('email'),
+                                        });
+                                    }}
+                                    className="mt-4 flex flex-col gap-3 md:flex-row"
+                                >
+                                    <input
+                                        type="email"
+                                        value={memberForm.data.email}
+                                        onChange={(event) => memberForm.setData('email', event.target.value)}
+                                        placeholder="Member email"
+                                        className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none"
+                                        required
+                                    />
+                                    <select
+                                        value={memberForm.data.role}
+                                        onChange={(event) => memberForm.setData('role', event.target.value)}
+                                        className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm text-white"
+                                    >
+                                        <option value="viewer">Viewer</option>
+                                        <option value="editor">Editor</option>
+                                    </select>
+                                    <button type="submit" className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950">Add Member</button>
+                                </form>
+                                {memberForm.errors.email ? <p className="mt-2 text-sm text-rose-300">{memberForm.errors.email}</p> : null}
+                            </div>
+
+                            <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+                                <h3 className="text-sm font-semibold text-white">Invite by link</h3>
+                                <p className="mt-1 text-xs text-slate-400">Anyone with a link can join after signing in. Regenerate a link to disable its previous version.</p>
+                                <div className="mt-4 space-y-3">
+                                    {inviteLinks.map((inviteLink) => (
+                                        <div key={inviteLink.role} className="flex flex-col gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-3 lg:flex-row lg:items-center">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{inviteLink.role} link</p>
+                                                <p className="mt-1 truncate text-xs text-slate-300">{inviteLink.url}</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => copyInviteLink(inviteLink)}
+                                                    className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200"
+                                                >
+                                                    {copiedRole === inviteLink.role ? 'Copied' : 'Copy Link'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.post(route('workspaces.invite-links.regenerate', [workspace.id, inviteLink.role]), {}, { preserveScroll: true })}
+                                                    className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400"
+                                                >
+                                                    Regenerate
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
                     ) : null}
-                    {memberForm.errors.email ? <p className="mt-2 text-sm text-rose-300">{memberForm.errors.email}</p> : null}
 
                     <div className="mt-5 space-y-3">
                         {members.map((member) => (

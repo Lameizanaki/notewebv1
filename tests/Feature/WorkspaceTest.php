@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\WorkspaceInviteLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -32,6 +33,14 @@ class WorkspaceTest extends TestCase
             'user_id' => $user->id,
             'role' => Workspace::ROLE_OWNER,
         ]);
+        $this->assertDatabaseHas('workspace_invite_links', [
+            'workspace_id' => $workspace->id,
+            'role' => Workspace::ROLE_VIEWER,
+        ]);
+        $this->assertDatabaseHas('workspace_invite_links', [
+            'workspace_id' => $workspace->id,
+            'role' => Workspace::ROLE_EDITOR,
+        ]);
     }
 
     public function test_owner_can_add_existing_user_as_editor(): void
@@ -52,6 +61,84 @@ class WorkspaceTest extends TestCase
             'user_id' => $editor->id,
             'role' => Workspace::ROLE_EDITOR,
         ]);
+    }
+
+    public function test_owner_can_add_google_user_with_normalized_email(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $googleUser = User::factory()->create([
+            'email' => 'google.user@example.com',
+            'google_id' => 'google-user-id',
+            'password_set_at' => null,
+        ]);
+
+        $this
+            ->actingAs($owner)
+            ->post(route('workspaces.members.store', $workspace), [
+                'email' => '  GOOGLE.USER@EXAMPLE.COM ',
+                'role' => Workspace::ROLE_VIEWER,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('workspace_user', [
+            'workspace_id' => $workspace->id,
+            'user_id' => $googleUser->id,
+            'role' => Workspace::ROLE_VIEWER,
+        ]);
+    }
+
+    public function test_user_can_join_workspace_with_viewer_link(): void
+    {
+        [, $workspace] = $this->workspaceOwnedBy();
+        $viewer = User::factory()->create();
+        $inviteLink = WorkspaceInviteLink::issue($workspace, Workspace::ROLE_VIEWER);
+
+        $this
+            ->actingAs($viewer)
+            ->get(route('workspace-invites.accept', $inviteLink->token))
+            ->assertRedirect(route('workspaces.notes.index', $workspace));
+
+        $this->assertDatabaseHas('workspace_user', [
+            'workspace_id' => $workspace->id,
+            'user_id' => $viewer->id,
+            'role' => Workspace::ROLE_VIEWER,
+        ]);
+    }
+
+    public function test_viewer_link_does_not_downgrade_existing_editor(): void
+    {
+        [, $workspace] = $this->workspaceOwnedBy();
+        $editor = User::factory()->create();
+        $workspace->members()->attach($editor->id, ['role' => Workspace::ROLE_EDITOR]);
+        $inviteLink = WorkspaceInviteLink::issue($workspace, Workspace::ROLE_VIEWER);
+
+        $this
+            ->actingAs($editor)
+            ->get(route('workspace-invites.accept', $inviteLink->token))
+            ->assertRedirect(route('workspaces.notes.index', $workspace));
+
+        $this->assertDatabaseHas('workspace_user', [
+            'workspace_id' => $workspace->id,
+            'user_id' => $editor->id,
+            'role' => Workspace::ROLE_EDITOR,
+        ]);
+    }
+
+    public function test_regenerating_invite_link_invalidates_old_link(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $inviteLink = WorkspaceInviteLink::issue($workspace, Workspace::ROLE_EDITOR);
+        $oldToken = $inviteLink->token;
+
+        $this
+            ->actingAs($owner)
+            ->post(route('workspaces.invite-links.regenerate', [$workspace, Workspace::ROLE_EDITOR]))
+            ->assertSessionHasNoErrors();
+
+        $this
+            ->actingAs(User::factory()->create())
+            ->get(route('workspace-invites.accept', $oldToken))
+            ->assertNotFound();
     }
 
     public function test_editor_can_create_shared_note(): void

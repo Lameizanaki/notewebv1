@@ -43,6 +43,11 @@ class Workspace extends Model
         return $this->hasMany(Tag::class);
     }
 
+    public function inviteLinks(): HasMany
+    {
+        return $this->hasMany(WorkspaceInviteLink::class);
+    }
+
     public function roleFor(User $user): ?string
     {
         if ($this->owner_id === $user->id) {

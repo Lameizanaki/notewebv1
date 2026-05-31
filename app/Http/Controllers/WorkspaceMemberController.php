@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class WorkspaceMemberController extends Controller
@@ -14,12 +15,24 @@ class WorkspaceMemberController extends Controller
     {
         $this->ensureOwner($request, $workspace);
 
+        $request->merge([
+            'email' => Str::lower(trim((string) $request->input('email'))),
+        ]);
+
         $validated = $request->validate([
-            'email' => ['required', 'email', Rule::exists('users', 'email')],
+            'email' => ['required', 'email'],
             'role' => ['required', Rule::in([Workspace::ROLE_EDITOR, Workspace::ROLE_VIEWER])],
         ]);
 
-        $member = User::where('email', $validated['email'])->firstOrFail();
+        $member = User::query()
+            ->whereRaw('LOWER(email) = ?', [$validated['email']])
+            ->first();
+
+        if (! $member) {
+            return back()->withErrors([
+                'email' => 'No QuickNote account was found for this email.',
+            ]);
+        }
 
         if ($member->id === $workspace->owner_id) {
             return back()->withErrors(['email' => 'The workspace owner is already a member.']);

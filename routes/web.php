@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\WorkspaceInviteLinkController;
 use App\Http\Controllers\WorkspaceMemberController;
 use App\Http\Controllers\WorkspaceNoteController;
 use App\Http\Controllers\WorkspaceOcrController;
@@ -65,6 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/workspaces/{workspace}/members', [WorkspaceMemberController::class, 'store'])->name('workspaces.members.store');
     Route::patch('/workspaces/{workspace}/members/{user}', [WorkspaceMemberController::class, 'update'])->name('workspaces.members.update');
     Route::delete('/workspaces/{workspace}/members/{user}', [WorkspaceMemberController::class, 'destroy'])->name('workspaces.members.destroy');
+    Route::post('/workspaces/{workspace}/invite-links/{role}/regenerate', [WorkspaceInviteLinkController::class, 'regenerate'])->name('workspaces.invite-links.regenerate');
+    Route::get('/workspace-invites/{token}', [WorkspaceInviteLinkController::class, 'accept'])->name('workspace-invites.accept');
 
     Route::get('/workspaces/{workspace}/notes', [WorkspaceNoteController::class, 'index'])->name('workspaces.notes.index');
     Route::get('/workspaces/{workspace}/notes/create', [WorkspaceNoteController::class, 'create'])->name('workspaces.notes.create');
