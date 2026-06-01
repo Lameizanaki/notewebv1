@@ -3,6 +3,7 @@ import NoteList from '@/Components/NoteList';
 import SearchInput from '@/Components/SearchInput';
 import SortDropdown from '@/Components/SortDropdown';
 import AppLayout from '@/Layouts/AppLayout';
+import { useDebouncedSearch } from '@/lib/useDebouncedSearch';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -22,6 +23,7 @@ export default function Pinned({ notes, tags, filters }) {
             { preserveState: true, replace: true },
         );
     };
+    useDebouncedSearch(search, (value) => applyFilters({ search: value }));
 
     return (
         <AppLayout title="Pinned Notes">
@@ -33,10 +35,6 @@ export default function Pinned({ notes, tags, filters }) {
                         <SearchInput
                             value={search}
                             onChange={setSearch}
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                applyFilters({ search });
-                            }}
                         />
                         <div className="flex flex-col gap-4 sm:flex-row">
                             <FilterDropdown

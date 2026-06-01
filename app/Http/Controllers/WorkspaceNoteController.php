@@ -6,6 +6,7 @@ use App\Http\Requests\StoreWorkspaceNoteRequest;
 use App\Http\Requests\UpdateWorkspaceNoteRequest;
 use App\Models\Note;
 use App\Models\Workspace;
+use App\Support\NoteSearch;
 use App\Support\WorkspaceNotePresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -171,13 +172,13 @@ class WorkspaceNoteController extends Controller
 
     private function applyListFilters($query, string $search, ?int $tagId, string $sort)
     {
-        if ($search !== '') {
-            $query->where('title', 'like', "%{$search}%");
-        }
+        NoteSearch::applyTitle($query, $search);
 
         if ($tagId) {
             $query->whereHas('tags', fn ($tagQuery) => $tagQuery->whereKey($tagId));
         }
+
+        $query->orderByDesc('is_pinned');
 
         return $sort === 'oldest' ? $query->oldest('updated_at') : $query->latest('updated_at');
     }

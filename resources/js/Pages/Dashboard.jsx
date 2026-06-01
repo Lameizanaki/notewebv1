@@ -2,6 +2,7 @@ import NoteList from '@/Components/NoteList';
 import Icon from '@/Components/Icon';
 import SearchInput from '@/Components/SearchInput';
 import AppLayout from '@/Layouts/AppLayout';
+import { useDebouncedSearch } from '@/lib/useDebouncedSearch';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -10,10 +11,9 @@ export default function Dashboard({ filters, pinnedNotes, recentNotes }) {
     const { auth } = usePage().props;
     const hasNotes = pinnedNotes.length || recentNotes.length;
 
-    const submitSearch = (event) => {
-        event.preventDefault();
-        router.get(route('dashboard'), { search }, { preserveState: true, replace: true });
-    };
+    useDebouncedSearch(search, (value) => {
+        router.get(route('dashboard'), { search: value }, { preserveState: true, replace: true });
+    });
 
     return (
         <AppLayout
@@ -33,7 +33,7 @@ export default function Dashboard({ filters, pinnedNotes, recentNotes }) {
             <div className="space-y-6">
                 <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
                     <p className="mb-4 text-sm text-slate-400">Search notes by title across your QuickNote workspace.</p>
-                    <SearchInput value={search} onChange={setSearch} onSubmit={submitSearch} />
+                    <SearchInput value={search} onChange={setSearch} />
                 </div>
 
                 {!hasNotes ? (

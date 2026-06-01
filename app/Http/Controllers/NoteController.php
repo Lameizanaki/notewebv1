@@ -7,6 +7,7 @@ use App\Http\Requests\StoreNoteRequest;
 use App\Http\Requests\UpdateNoteRequest;
 use App\Models\Note;
 use App\Models\Tag;
+use App\Support\NoteSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,9 +22,7 @@ class NoteController extends Controller
         $search = trim((string) $request->input('search', ''));
         $baseQuery = $request->user()->notes()->whereNull('workspace_id')->with('tags');
 
-        if ($search !== '') {
-            $baseQuery->where('title', 'like', "%{$search}%");
-        }
+        NoteSearch::applyTitle($baseQuery, $search);
 
         $pinnedNotes = (clone $baseQuery)
             ->where('is_pinned', true)
@@ -237,9 +236,7 @@ class NoteController extends Controller
 
     private function applyListFilters($query, string $search, ?int $tagId, string $sort)
     {
-        if ($search !== '') {
-            $query->where('title', 'like', "%{$search}%");
-        }
+        NoteSearch::applyTitle($query, $search);
 
         if ($tagId) {
             $query->whereHas('tags', fn ($tagQuery) => $tagQuery->whereKey($tagId));

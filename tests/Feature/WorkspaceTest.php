@@ -329,6 +329,71 @@ class WorkspaceTest extends TestCase
         ]);
     }
 
+    public function test_pinned_shared_notes_are_listed_before_unpinned_notes(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Recently updated normal note',
+            'is_pinned' => false,
+            'updated_at' => now(),
+        ]);
+        $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Older pinned note',
+            'is_pinned' => true,
+            'updated_at' => now()->subDay(),
+        ]);
+
+        $this
+            ->actingAs($owner)
+            ->get(route('workspaces.notes.index', $workspace))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('notes.0.title', 'Older pinned note')
+                ->where('notes.1.title', 'Recently updated normal note')
+            );
+    }
+
+    public function test_workspace_search_is_case_insensitive(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Weekly PROJECT Report',
+        ]);
+
+        $this
+            ->actingAs($owner)
+            ->get(route('workspaces.notes.index', [$workspace, 'search' => 'project']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('notes', 1)
+                ->where('notes.0.title', 'Weekly PROJECT Report')
+            );
+    }
+
+    public function test_deleting_workspace_permanently_removes_all_shared_notes(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $activeNote = $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Active shared note',
+        ]);
+        $trashedNote = $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Trashed shared note',
+        ]);
+        $trashedNote->delete();
+
+        $this
+            ->actingAs($owner)
+            ->delete(route('workspaces.destroy', $workspace))
+            ->assertRedirect(route('workspaces.index'));
+
+        $this->assertDatabaseMissing('workspaces', ['id' => $workspace->id]);
+        $this->assertDatabaseMissing('notes', ['id' => $activeNote->id]);
+        $this->assertDatabaseMissing('notes', ['id' => $trashedNote->id]);
+    }
+
     private function workspaceOwnedBy(): array
     {
         $owner = User::factory()->create();

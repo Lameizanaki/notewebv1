@@ -88,7 +88,10 @@ class WorkspaceController extends Controller
     public function destroy(Request $request, Workspace $workspace): RedirectResponse
     {
         $this->ensureOwner($request, $workspace);
-        $workspace->delete();
+        DB::transaction(function () use ($workspace) {
+            $workspace->notes()->withTrashed()->forceDelete();
+            $workspace->delete();
+        });
 
         return redirect()
             ->route('workspaces.index')

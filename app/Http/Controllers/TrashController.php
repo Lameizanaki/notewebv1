@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use App\Models\Workspace;
+use App\Support\NoteSearch;
+use App\Support\WorkspaceNotePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,9 +24,7 @@ class TrashController extends Controller
             ->onlyTrashed()
             ->with('tags');
 
-        if ($search !== '') {
-            $notesQuery->where('title', 'like', "%{$search}%");
-        }
+        NoteSearch::applyTitle($notesQuery, $search);
 
         $notes = ($sort === 'oldest'
             ? $notesQuery->oldest('deleted_at')
@@ -55,6 +56,13 @@ class TrashController extends Controller
                 'sort' => $sort,
             ],
             'notes' => $notes,
+            'workspaces' => $request->user()
+                ->workspaces()
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Workspace $workspace) => $this->transformWorkspaceTrash($request, $workspace, $search, $sort))
+                ->values()
+                ->all(),
         ]);
     }
 
@@ -83,5 +91,37 @@ class TrashController extends Controller
             ->withTrashed()
             ->whereNotNull('deleted_at')
             ->findOrFail($noteId);
+    }
+
+    private function transformWorkspaceTrash(Request $request, Workspace $workspace, string $search, string $sort): array
+    {
+        $notesQuery = $workspace->notes()->onlyTrashed()->with(['tags', 'ocrUploads']);
+        NoteSearch::applyTitle($notesQuery, $search);
+
+        $notes = ($sort === 'oldest' ? $notesQuery->oldest('deleted_at') : $notesQuery->latest('deleted_at'))
+            ->get()
+            ->map(fn (Note $note) => [
+                ...WorkspaceNotePresenter::snapshot($note),
+                'deleted_at' => optional($note->deleted_at)?->toIso8601String(),
+                'days_remaining' => $this->daysRemaining($note),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'id' => $workspace->id,
+            'name' => $workspace->name,
+            'role' => $workspace->roleFor($request->user()),
+            'can_edit' => $workspace->canEdit($request->user()),
+            'is_owner' => $workspace->isOwner($request->user()),
+            'notes' => $notes,
+        ];
+    }
+
+    private function daysRemaining(Note $note): ?int
+    {
+        return $note->permanently_delete_at
+            ? max(0, now()->startOfDay()->diffInDays($note->permanently_delete_at->copy()->startOfDay(), false))
+            : null;
     }
 }

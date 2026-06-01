@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Note;
 use App\Models\Workspace;
+use App\Support\NoteSearch;
 use App\Support\WorkspaceNotePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,9 +20,7 @@ class WorkspaceTrashController extends Controller
         $sort = $request->input('sort') === 'oldest' ? 'oldest' : 'newest';
         $notesQuery = $workspace->notes()->onlyTrashed()->with('tags');
 
-        if ($search !== '') {
-            $notesQuery->where('title', 'like', "%{$search}%");
-        }
+        NoteSearch::applyTitle($notesQuery, $search);
 
         $notes = ($sort === 'oldest' ? $notesQuery->oldest('deleted_at') : $notesQuery->latest('deleted_at'))
             ->get()

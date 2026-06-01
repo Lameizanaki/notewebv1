@@ -4,6 +4,7 @@ import SortDropdown from '@/Components/SortDropdown';
 import TagPill from '@/Components/TagPill';
 import AppLayout from '@/Layouts/AppLayout';
 import { formatLocalDateTime } from '@/lib/dateTime';
+import { useDebouncedSearch } from '@/lib/useDebouncedSearch';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -16,6 +17,7 @@ export default function Trash({ workspace, notes, filters }) {
         { search: next.search ?? search, sort: next.sort ?? sort },
         { preserveState: true, replace: true },
     );
+    useDebouncedSearch(search, (value) => applyFilters({ search: value }));
 
     return (
         <AppLayout
@@ -29,10 +31,6 @@ export default function Trash({ workspace, notes, filters }) {
                         <SearchInput
                             value={search}
                             onChange={setSearch}
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                applyFilters({ search });
-                            }}
                             placeholder="Search deleted shared notes..."
                         />
                         <SortDropdown value={sort} onChange={(value) => {

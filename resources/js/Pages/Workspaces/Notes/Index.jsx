@@ -4,6 +4,7 @@ import NoteList from '@/Components/NoteList';
 import SearchInput from '@/Components/SearchInput';
 import SortDropdown from '@/Components/SortDropdown';
 import AppLayout from '@/Layouts/AppLayout';
+import { useDebouncedSearch } from '@/lib/useDebouncedSearch';
 import { workspaceNoteRoutes } from '@/lib/workspaceRoutes';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -25,15 +26,13 @@ export default function Index({ workspace, notes, tags, filters }) {
             { preserveState: true, replace: true },
         );
     };
+    useDebouncedSearch(search, (value) => applyFilters({ search: value }));
 
     return (
         <AppLayout
             title={workspace.name}
             actions={
                 <div className="flex flex-wrap gap-2">
-                    <Link href={route('workspaces.trash.index', workspace.id)} className="inline-flex h-10 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white">
-                        Trash
-                    </Link>
                     <Link href={route('workspaces.settings.edit', workspace.id)} className="inline-flex h-10 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white">
                         Members
                     </Link>
@@ -57,10 +56,6 @@ export default function Index({ workspace, notes, tags, filters }) {
                         <SearchInput
                             value={search}
                             onChange={setSearch}
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                applyFilters({ search });
-                            }}
                             placeholder="Search shared notes by title..."
                         />
                         <div className="flex flex-col gap-4 sm:flex-row">
