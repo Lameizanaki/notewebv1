@@ -74,6 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/workspaces/{workspace}/notes', [WorkspaceNoteController::class, 'store'])->name('workspaces.notes.store');
     Route::get('/workspaces/{workspace}/notes/{note}', [WorkspaceNoteController::class, 'show'])->name('workspaces.notes.show');
     Route::get('/workspaces/{workspace}/notes/{note}/edit', [WorkspaceNoteController::class, 'edit'])->name('workspaces.notes.edit');
+    Route::get('/workspaces/{workspace}/notes/{note}/snapshot', [WorkspaceNoteController::class, 'snapshot'])->name('workspaces.notes.snapshot');
     Route::patch('/workspaces/{workspace}/notes/{note}', [WorkspaceNoteController::class, 'update'])->name('workspaces.notes.update');
     Route::delete('/workspaces/{workspace}/notes/{note}', [WorkspaceNoteController::class, 'destroy'])->name('workspaces.notes.destroy');
     Route::patch('/workspaces/{workspace}/notes/{note}/pin', [WorkspaceNoteController::class, 'togglePin'])->name('workspaces.notes.pin');

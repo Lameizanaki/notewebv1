@@ -24,13 +24,21 @@ class WorkspaceNotePresenter
     public static function note(Note $note): array
     {
         return [
+            ...self::snapshot($note),
+            'ocr_uploads' => self::uploads($note->ocrUploads),
+        ];
+    }
+
+    public static function snapshot(Note $note): array
+    {
+        return [
             'id' => $note->id,
             'title' => $note->title,
             'content' => $note->content,
             'is_pinned' => $note->is_pinned,
+            'sync_version' => $note->sync_version,
             'updated_at' => optional($note->updated_at)?->toIso8601String(),
             'tags' => self::tags($note->tags),
-            'ocr_uploads' => self::uploads($note->ocrUploads),
         ];
     }
 

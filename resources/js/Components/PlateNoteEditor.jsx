@@ -895,6 +895,8 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
     const recognitionRef = useRef(null);
     const dictationSelectionRef = useRef(null);
     const dictationErroredRef = useRef(false);
+    const suppressContentChangeRef = useRef(false);
+    const suppressContentChangeTimerRef = useRef(null);
     const editor = usePlateEditor(
         {
             plugins,
@@ -908,13 +910,30 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
             return;
         }
 
-        editor.tf.setValue(editorValue);
+        replaceEditorContent(editorValue);
     }, [editor, editorValue]);
 
     useEffect(() => () => {
         recognitionRef.current?.stop?.();
         recognitionRef.current = null;
+
+        if (suppressContentChangeTimerRef.current) {
+            window.clearTimeout(suppressContentChangeTimerRef.current);
+        }
     }, []);
+
+    const replaceEditorContent = (nextValue) => {
+        if (suppressContentChangeTimerRef.current) {
+            window.clearTimeout(suppressContentChangeTimerRef.current);
+        }
+
+        suppressContentChangeRef.current = true;
+        editor.tf.setValue(nextValue);
+        suppressContentChangeTimerRef.current = window.setTimeout(() => {
+            suppressContentChangeRef.current = false;
+            suppressContentChangeTimerRef.current = null;
+        }, 0);
+    };
 
     const insertDictationText = (rawText) => {
         const text = rawText.trim();
@@ -1268,6 +1287,13 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                 editor.tf.setValue(deserializeHtmlToValue(nextHtml));
                 editor.tf.focus();
             },
+            replaceContent(html) {
+                if (!editor) {
+                    return;
+                }
+
+                replaceEditorContent(deserializeHtmlToValue(html));
+            },
             autoCorrect: applyAutoCorrect,
             improveWriting: requestImproveWriting,
             toggleDictation,
@@ -1313,7 +1339,11 @@ const PlateNoteEditor = forwardRef(function PlateNoteEditor(
                 readOnly={readOnly}
                 renderElement={renderElement}
                 renderLeaf={renderLeaf}
-                onChange={() => onContentChange?.()}
+                onChange={() => {
+                    if (!suppressContentChangeRef.current) {
+                        onContentChange?.();
+                    }
+                }}
             >
                 {!readOnly ? (
                     <PlateToolbar

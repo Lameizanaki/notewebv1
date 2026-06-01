@@ -1,8 +1,10 @@
 import Icon from '@/Components/Icon';
 import NoteEditor from '@/Components/NoteEditor';
 import AppLayout from '@/Layouts/AppLayout';
+import { useWorkspaceNotePolling } from '@/lib/useWorkspaceNotePolling';
 import { workspaceNoteRoutes } from '@/lib/workspaceRoutes';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useCallback, useRef, useState } from 'react';
 
 export default function Show({ workspace, note, tags, ocrUploads }) {
     const form = useForm({
@@ -10,6 +12,28 @@ export default function Show({ workspace, note, tags, ocrUploads }) {
         content: note.content ?? '',
         is_pinned: Boolean(note.is_pinned),
         tag_ids: note.tags.map((tag) => tag.id),
+    });
+    const formRef = useRef(form);
+    formRef.current = form;
+    const editorRef = useRef(null);
+    const [currentNote, setCurrentNote] = useState(note);
+
+    const applyRemoteSnapshot = useCallback((snapshot) => {
+        formRef.current.setData({
+            title: snapshot.title ?? '',
+            content: snapshot.content ?? '',
+            is_pinned: Boolean(snapshot.is_pinned),
+            tag_ids: snapshot.tags.map((tag) => tag.id),
+        });
+        editorRef.current?.replaceContent?.(snapshot.content ?? '');
+        setCurrentNote((existingNote) => ({ ...existingNote, ...snapshot }));
+    }, []);
+
+    useWorkspaceNotePolling({
+        workspaceId: workspace.id,
+        noteId: note.id,
+        initialVersion: note.sync_version,
+        onSnapshot: applyRemoteSnapshot,
     });
 
     return (
@@ -22,13 +46,14 @@ export default function Show({ workspace, note, tags, ocrUploads }) {
                 </Link>
             ) : null}
         >
-            <Head title={note.title} />
+            <Head title={currentNote.title} />
             <NoteEditor
                 readOnly
-                note={note}
+                note={currentNote}
                 form={form}
                 tags={tags}
                 ocrUploads={ocrUploads}
+                editorRef={editorRef}
                 routes={workspaceNoteRoutes(workspace.id)}
                 showEditAction={workspace.can_edit}
             />

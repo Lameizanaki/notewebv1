@@ -1,9 +1,10 @@
 import NoteEditor from '@/Components/NoteEditor';
 import AppLayout from '@/Layouts/AppLayout';
 import { useAutoSave } from '@/lib/useAutoSave';
+import { useWorkspaceNotePolling } from '@/lib/useWorkspaceNotePolling';
 import { workspaceNoteRoutes } from '@/lib/workspaceRoutes';
 import { Head, useForm } from '@inertiajs/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function Edit({ workspace, note, tags, ocrUploads }) {
     const form = useForm({
@@ -15,9 +16,32 @@ export default function Edit({ workspace, note, tags, ocrUploads }) {
     const formRef = useRef(form);
     formRef.current = form;
     const editorRef = useRef(null);
+    const localChangeRevisionRef = useRef(0);
+    const hasUnsavedChangesRef = useRef(false);
+    const [currentNote, setCurrentNote] = useState(note);
+
+    const applyRemoteSnapshot = useCallback((snapshot) => {
+        formRef.current.setData({
+            title: snapshot.title ?? '',
+            content: snapshot.content ?? '',
+            is_pinned: Boolean(snapshot.is_pinned),
+            tag_ids: snapshot.tags.map((tag) => tag.id),
+        });
+        editorRef.current?.replaceContent?.(snapshot.content ?? '');
+        setCurrentNote((existingNote) => ({ ...existingNote, ...snapshot }));
+    }, []);
+
+    const { markVersion } = useWorkspaceNotePolling({
+        workspaceId: workspace.id,
+        noteId: note.id,
+        initialVersion: note.sync_version,
+        canApply: () => !hasUnsavedChangesRef.current,
+        onSnapshot: applyRemoteSnapshot,
+    });
 
     const performSave = useCallback(async () => {
         const currentForm = formRef.current;
+        const savingRevision = localChangeRevisionRef.current;
         let content = currentForm.data.content;
 
         if (editorRef.current?.serialize) {
@@ -40,9 +64,22 @@ export default function Edit({ workspace, note, tags, ocrUploads }) {
         if (!response.ok) {
             throw new Error('Auto-save failed.');
         }
-    }, [note.id, workspace.id]);
+
+        const payload = await response.json();
+        markVersion(payload.note?.sync_version);
+        setCurrentNote((existingNote) => ({ ...existingNote, ...payload.note }));
+
+        if (localChangeRevisionRef.current === savingRevision) {
+            hasUnsavedChangesRef.current = false;
+        }
+    }, [markVersion, note.id, workspace.id]);
 
     const { status, trigger, saveNow } = useAutoSave({ onSave: performSave, delay: 2000, enabled: true });
+    const handleContentChange = useCallback(() => {
+        localChangeRevisionRef.current += 1;
+        hasUnsavedChangesRef.current = true;
+        trigger();
+    }, [trigger]);
 
     useEffect(() => {
         const handleVisibilityChange = () => document.visibilityState === 'hidden' && saveNow();
@@ -55,12 +92,12 @@ export default function Edit({ workspace, note, tags, ocrUploads }) {
             <Head title="Edit Shared Note" />
             <NoteEditor
                 mode="edit"
-                note={note}
+                note={currentNote}
                 form={form}
                 tags={tags}
                 ocrUploads={ocrUploads}
                 autoSaveStatus={status}
-                onContentChange={trigger}
+                onContentChange={handleContentChange}
                 editorRef={editorRef}
                 routes={workspaceNoteRoutes(workspace.id)}
                 submit={(content) => {

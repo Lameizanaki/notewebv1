@@ -97,14 +97,29 @@ class WorkspaceNoteController extends Controller
         ]);
 
         $note->tags()->sync($validated['tag_ids'] ?? []);
+        $note->increment('sync_version');
+        $note = $this->workspaceNote($workspace, $note);
 
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Saved.']);
+            return response()->json([
+                'message' => 'Saved.',
+                'note' => WorkspaceNotePresenter::snapshot($note),
+            ]);
         }
 
         return redirect()
             ->route('workspaces.notes.show', [$workspace, $note])
             ->with('success', 'Shared note updated successfully.');
+    }
+
+    public function snapshot(Request $request, Workspace $workspace, Note $note): JsonResponse
+    {
+        $this->ensureMember($request, $workspace);
+        $note = $this->workspaceNote($workspace, $note);
+
+        return response()->json([
+            'note' => WorkspaceNotePresenter::snapshot($note),
+        ]);
     }
 
     public function destroy(Request $request, Workspace $workspace, Note $note): RedirectResponse
@@ -130,6 +145,7 @@ class WorkspaceNoteController extends Controller
                 ? (bool) $validated['is_pinned']
                 : ! $note->is_pinned,
         ]);
+        $note->increment('sync_version');
 
         return back()->with('success', $note->is_pinned ? 'Shared note pinned.' : 'Shared note unpinned.');
     }

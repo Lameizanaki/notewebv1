@@ -213,6 +213,87 @@ class WorkspaceTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_workspace_member_can_poll_latest_note_snapshot(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $viewer = User::factory()->create();
+        $workspace->members()->attach($viewer->id, ['role' => Workspace::ROLE_VIEWER]);
+        $note = $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Live lecture notes',
+            'content' => '<p>First version</p>',
+        ]);
+
+        $this
+            ->actingAs($viewer)
+            ->getJson(route('workspaces.notes.snapshot', [$workspace, $note]))
+            ->assertOk()
+            ->assertJsonPath('note.title', 'Live lecture notes')
+            ->assertJsonPath('note.content', '<p>First version</p>')
+            ->assertJsonPath('note.sync_version', 0);
+    }
+
+    public function test_non_member_cannot_poll_workspace_note_snapshot(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $note = $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Private workspace note',
+        ]);
+
+        $this
+            ->actingAs(User::factory()->create())
+            ->getJson(route('workspaces.notes.snapshot', [$workspace, $note]))
+            ->assertForbidden();
+    }
+
+    public function test_updating_shared_note_increments_sync_version(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $note = $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Draft',
+            'content' => '<p>Before</p>',
+        ]);
+
+        $this
+            ->actingAs($owner)
+            ->patchJson(route('workspaces.notes.update', [$workspace, $note]), [
+                'title' => 'Updated draft',
+                'content' => '<p>After</p>',
+                'is_pinned' => false,
+                'tag_ids' => [],
+            ])
+            ->assertOk()
+            ->assertJsonPath('note.sync_version', 1);
+
+        $this->assertDatabaseHas('notes', [
+            'id' => $note->id,
+            'sync_version' => 1,
+        ]);
+    }
+
+    public function test_pinning_shared_note_increments_sync_version(): void
+    {
+        [$owner, $workspace] = $this->workspaceOwnedBy();
+        $note = $workspace->notes()->create([
+            'user_id' => $owner->id,
+            'title' => 'Pin this note',
+        ]);
+
+        $this
+            ->actingAs($owner)
+            ->patch(route('workspaces.notes.pin', [$workspace, $note]), [
+                'is_pinned' => true,
+            ]);
+
+        $this->assertDatabaseHas('notes', [
+            'id' => $note->id,
+            'is_pinned' => true,
+            'sync_version' => 1,
+        ]);
+    }
+
     public function test_shared_note_is_not_listed_as_personal_note(): void
     {
         [$owner, $workspace] = $this->workspaceOwnedBy();

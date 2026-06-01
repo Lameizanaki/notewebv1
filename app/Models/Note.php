@@ -23,6 +23,7 @@ class Note extends Model
         'title',
         'content',
         'is_pinned',
+        'sync_version',
         'permanently_delete_at',
     ];
 
@@ -35,6 +36,7 @@ class Note extends Model
     {
         return [
             'is_pinned' => 'boolean',
+            'sync_version' => 'integer',
             'permanently_delete_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
