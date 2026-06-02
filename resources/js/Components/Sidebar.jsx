@@ -71,8 +71,12 @@ export default function Sidebar({ user, className = '', onClose = null, showMobi
             <div className="mt-7 border-t border-slate-800 pt-5">
                 <div className="flex items-center justify-between gap-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Workspaces</p>
-                    <Link href={route('workspaces.index')} className="text-xs text-emerald-300 transition hover:text-emerald-200">
-                        Manage
+                    <Link
+                        href={route('workspaces.index')}
+                        onClick={onClose ?? undefined}
+                        className="text-xs text-emerald-300 transition hover:text-emerald-200"
+                    >
+                        + New
                     </Link>
                 </div>
 
@@ -104,14 +108,6 @@ export default function Sidebar({ user, className = '', onClose = null, showMobi
                     )}
                 </div>
 
-                <Link
-                    href={route('workspaces.index')}
-                    onClick={onClose ?? undefined}
-                    className="mt-3 inline-flex items-center gap-2 px-3 text-xs font-medium text-emerald-300 transition hover:text-emerald-200"
-                >
-                    <Icon name="plus" className="h-3.5 w-3.5" />
-                    New Workspace
-                </Link>
             </div>
 
             <div className="mt-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">

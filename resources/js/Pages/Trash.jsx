@@ -5,14 +5,28 @@ import TagPill from '@/Components/TagPill';
 import AppLayout from '@/Layouts/AppLayout';
 import { formatLocalDateTime } from '@/lib/dateTime';
 import { useDebouncedSearch } from '@/lib/useDebouncedSearch';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+
+const previewLimit = 3;
 
 function EmptyTrash({ message }) {
     return (
         <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/60 px-5 py-9 text-center">
             <p className="text-sm text-slate-400">{message}</p>
         </div>
+    );
+}
+
+function ViewToggle({ expanded, onClick, label }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="mt-4 text-xs font-semibold text-emerald-300 transition hover:text-emerald-200"
+        >
+            {expanded ? `See Less ${label}` : `View More ${label}`}
+        </button>
     );
 }
 
@@ -71,6 +85,9 @@ function TrashNoteCard({ note, workspace = null }) {
 export default function Trash({ notes, workspaces, filters }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [sort, setSort] = useState(filters.sort ?? 'newest');
+    const [showAllPersonalNotes, setShowAllPersonalNotes] = useState(false);
+    const [showAllWorkspaces, setShowAllWorkspaces] = useState(false);
+    const [expandedWorkspaceNotes, setExpandedWorkspaceNotes] = useState({});
 
     const applyFilters = (next = {}) => {
         router.get(
@@ -83,6 +100,16 @@ export default function Trash({ notes, workspaces, filters }) {
         );
     };
     useDebouncedSearch(search, (value) => applyFilters({ search: value }));
+
+    const visiblePersonalNotes = showAllPersonalNotes ? notes : notes.slice(0, previewLimit);
+    const visibleWorkspaces = showAllWorkspaces ? workspaces : workspaces.slice(0, previewLimit);
+
+    const toggleWorkspaceNotes = (workspaceId) => {
+        setExpandedWorkspaceNotes((current) => ({
+            ...current,
+            [workspaceId]: !current[workspaceId],
+        }));
+    };
 
     return (
         <AppLayout title="Trash">
@@ -103,17 +130,24 @@ export default function Trash({ notes, workspaces, filters }) {
                     </div>
                 </div>
 
-                <div className="grid items-start gap-6 xl:grid-cols-2">
+                <div className="space-y-6">
                     <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-5">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Personal</p>
                             <h2 className="mt-2 text-lg font-semibold text-white">Your Deleted Notes</h2>
                         </div>
                         <div className="mt-4 space-y-3">
-                            {notes.length
-                                ? notes.map((note) => <TrashNoteCard key={note.id} note={note} />)
+                            {visiblePersonalNotes.length
+                                ? visiblePersonalNotes.map((note) => <TrashNoteCard key={note.id} note={note} />)
                                 : <EmptyTrash message="Your personal trash is empty." />}
                         </div>
+                        {notes.length > previewLimit ? (
+                            <ViewToggle
+                                expanded={showAllPersonalNotes}
+                                onClick={() => setShowAllPersonalNotes((current) => !current)}
+                                label="Notes"
+                            />
+                        ) : null}
                     </section>
 
                     <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-5">
@@ -122,20 +156,17 @@ export default function Trash({ notes, workspaces, filters }) {
                             <h2 className="mt-2 text-lg font-semibold text-white">Workspace Deleted Notes</h2>
                         </div>
                         <div className="mt-4 space-y-4">
-                            {workspaces.length ? workspaces.map((workspace) => (
-                                <div key={workspace.id} className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{workspace.name}</h3>
-                                            <p className="mt-1 text-xs capitalize text-slate-500">{workspace.role} access</p>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <Link
-                                                href={route('workspaces.notes.index', workspace.id)}
-                                                className="inline-flex h-9 items-center rounded-lg border border-slate-700 px-3 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
-                                            >
-                                                Open Workspace
-                                            </Link>
+                            {visibleWorkspaces.length ? visibleWorkspaces.map((workspace) => {
+                                const showAllNotes = expandedWorkspaceNotes[workspace.id] ?? false;
+                                const visibleNotes = showAllNotes ? workspace.notes : workspace.notes.slice(0, previewLimit);
+
+                                return (
+                                    <div key={workspace.id} className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <h3 className="font-semibold text-white">{workspace.name}</h3>
+                                                <p className="mt-1 text-xs capitalize text-slate-500">{workspace.role} access</p>
+                                            </div>
                                             {workspace.is_owner ? (
                                                 <button
                                                     type="button"
@@ -151,16 +182,30 @@ export default function Trash({ notes, workspaces, filters }) {
                                                 </button>
                                             ) : null}
                                         </div>
-                                    </div>
 
-                                    <div className="mt-4 space-y-3">
-                                        {workspace.notes.length
-                                            ? workspace.notes.map((note) => <TrashNoteCard key={note.id} note={note} workspace={workspace} />)
-                                            : <EmptyTrash message="No deleted notes in this workspace." />}
+                                        <div className="mt-4 space-y-3">
+                                            {visibleNotes.length
+                                                ? visibleNotes.map((note) => <TrashNoteCard key={note.id} note={note} workspace={workspace} />)
+                                                : <EmptyTrash message="No deleted notes in this workspace." />}
+                                        </div>
+                                        {workspace.notes.length > previewLimit ? (
+                                            <ViewToggle
+                                                expanded={showAllNotes}
+                                                onClick={() => toggleWorkspaceNotes(workspace.id)}
+                                                label="Notes"
+                                            />
+                                        ) : null}
                                     </div>
-                                </div>
-                            )) : <EmptyTrash message="You do not belong to any shared workspaces." />}
+                                );
+                            }) : <EmptyTrash message="You do not belong to any shared workspaces." />}
                         </div>
+                        {workspaces.length > previewLimit ? (
+                            <ViewToggle
+                                expanded={showAllWorkspaces}
+                                onClick={() => setShowAllWorkspaces((current) => !current)}
+                                label="Workspaces"
+                            />
+                        ) : null}
                     </section>
                 </div>
             </div>
